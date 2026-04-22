@@ -1,0 +1,4236 @@
+PROJECT: cric
+GENERATED: 2026-04-12 15:56:10
+
+=== SUMMARY ===
+This is an IPL Live Prediction System utilizing FastAPI, XGBoost, and BeautifulSoup.
+Features include:
+- Pre-match winner prediction.
+- Live score prediction based on scraped Cricinfo data.
+- A frontend interface for tracking matches.
+- Retraining and simulation pipelines.
+
+=== FILE STRUCTURE ===
+.gitignore
+README.md
+accuracy_tracker.py
+allCode.txt
+app.py
+backend
+backend\app
+backend\app\__init__.py
+backend\app\api.py
+backend\app\config.py
+backend\app\main.py
+backend\app\schemas.py
+backend\app\services
+backend\app\services\__init__.py
+backend\app\services\data_service.py
+backend\app\services\live_service.py
+backend\app\services\prediction_service.py
+backend\app\services\scrape_service.py
+backend\app\utils
+backend\app\utils\__init__.py
+backend\app\utils\features.py
+backend\app\utils\helpers.py
+backend\app\utils\preprocessing.py
+data_builder.py
+frontend
+frontend\app
+frontend\assets
+frontend\css
+frontend\css\styles.css
+frontend\index.html
+frontend\js
+frontend\js\main.js
+frontend\js\match.js
+frontend\js\training.js
+frontend\match.html
+frontend\training.html
+generate_allcode.py
+inference.py
+launch_app.bat
+live_prediction.py
+requirements.txt
+retrain.py
+scraper.py
+scripts
+scripts\download_data.py
+scripts\predict_live.py
+scripts\preprocess_data.py
+scripts\test_pipeline.py
+scripts\train_score_model.py
+scripts\train_winner_model.py
+simulation_engine.py
+test_inference.py
+test_scraper.py
+
+=== FILE CONTENTS ===
+
+----- BEGIN FILE: .gitignore -----
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data artifacts
+data/processed/*.csv
+data/processed/*.parquet
+
+# Model artifacts
+models/*.joblib
+models/*.pkl
+models/*.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+----- END FILE: .gitignore -----
+
+----- BEGIN FILE: README.md -----
+# IPL Live Prediction System (Scaffold)
+
+Complete starter scaffold for:
+- Pre-match winner prediction (XGBoost classifier)
+- Live prediction after match start (XGBoost regressor/classifier-style output)
+- FastAPI backend
+- Live score scraping/API integration placeholders
+
+## Project Structure
+
+```text
+cric/
+  data/
+    raw/
+    processed/
+  models/
+  notebooks/
+  backend/
+    app/
+      __init__.py
+      main.py
+      api.py
+      config.py
+      schemas.py
+      services/
+        __init__.py
+        data_service.py
+        prediction_service.py
+        live_service.py
+        scrape_service.py
+      utils/
+        __init__.py
+        preprocessing.py
+        features.py
+        helpers.py
+  frontend/
+    app/
+  scripts/
+    download_data.py
+    preprocess_data.py
+    train_winner_model.py
+    train_score_model.py
+    predict_live.py
+    test_pipeline.py
+  tests/
+  docs/
+  requirements.txt
+  README.md
+  .gitignore
+```
+
+## Prerequisites
+
+- Python 3.10+ recommended
+- CPU-only environment
+
+## Setup
+
+```bash
+cd cric
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+# source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Data Placement
+
+Place raw datasets at:
+- `data/raw/matches.csv`
+- `data/raw/deliveries.csv`
+
+No data is bundled in this scaffold.
+
+## Run Commands
+
+```bash
+# (Optional) create data directory reminder
+python scripts/download_data.py
+
+# Preprocess raw CSVs
+python scripts/preprocess_data.py
+
+# Train pre-match winner model
+python scripts/train_winner_model.py
+
+# Train live score model
+python scripts/train_score_model.py
+
+# Run a local live prediction demo
+python scripts/predict_live.py
+
+# Run smoke checks
+python scripts/test_pipeline.py
+
+# Start FastAPI server
+uvicorn backend.app.main:app --reload
+```
+
+## API Endpoints
+
+- `GET /api/v1/health`
+- `POST /api/v1/predict/prematch`
+- `POST /api/v1/predict/live`
+- `GET /api/v1/live/match/{match_id}`
+
+## Next Steps
+
+1. Align target/feature columns with your dataset schema in:
+   - `backend/app/utils/features.py`
+   - `backend/app/services/prediction_service.py`
+2. Replace scraper placeholder in `backend/app/services/scrape_service.py` with a real source.
+3. Add evaluation metrics and tests in `tests/`.
+
+----- END FILE: README.md -----
+
+----- BEGIN FILE: accuracy_tracker.py -----
+"""Accuracy tracking utilities for simulation predictions."""
+
+from __future__ import annotations
+
+from typing import Dict, Iterable, Optional
+
+
+def evaluate_prediction(predicted_score: float, actual_score: float) -> Dict[str, float | int | str]:
+    """
+    Evaluate one prediction.
+
+    Correct if absolute error < 10.
+    """
+    predicted = float(predicted_score)
+    actual = float(actual_score)
+    error = abs(predicted - actual)
+    is_correct = error < 10
+
+    return {
+        "predicted_score": predicted,
+        "actual_score": actual,
+        "error": error,
+        "result": "correct" if is_correct else "wrong",
+    }
+
+
+def summarize_predictions(rows: Iterable[Dict[str, Optional[float]]]) -> Dict[str, float | int]:
+    """Aggregate total/correct/wrong/accuracy across prediction rows."""
+    total = 0
+    correct = 0
+    wrong = 0
+
+    for row in rows:
+        predicted = row.get("predicted_score")
+        actual = row.get("actual_score")
+        if predicted is None or actual is None:
+            continue
+
+        eval_row = evaluate_prediction(float(predicted), float(actual))
+        total += 1
+        if eval_row["result"] == "correct":
+            correct += 1
+        else:
+            wrong += 1
+
+    accuracy = round((correct / total) * 100, 2) if total else 0.0
+    return {
+        "total_predictions": total,
+        "correct": correct,
+        "wrong": wrong,
+        "accuracy": accuracy,
+    }
+
+----- END FILE: accuracy_tracker.py -----
+
+----- BEGIN FILE: app.py -----
+"""FastAPI backend for IPL live inference."""
+
+from __future__ import annotations
+
+import logging
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, field_validator
+
+from inference import predict_live
+from scraper import CricinfoScrapeError, get_live_match_data
+from simulation_engine import run_simulation
+from accuracy_tracker import summarize_predictions
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("ipl-api")
+BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
+
+class PredictRequest(BaseModel):
+    """Request schema for live prediction."""
+
+    batting_team: str = Field(..., min_length=1, max_length=100)
+    bowling_team: str = Field(..., min_length=1, max_length=100)
+    runs: float = Field(..., ge=0)
+    wickets: float = Field(..., ge=0, le=10)
+    overs: float = Field(..., ge=0)
+
+    @field_validator("batting_team", "bowling_team")
+    @classmethod
+    def _clean_team_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Team name cannot be blank.")
+        return cleaned
+
+
+class PredictResponse(BaseModel):
+    """Response schema for live prediction."""
+
+    predicted_winner: str
+    win_percentage: str
+    predicted_score: int
+    target_over: int
+
+
+class LiveResponse(BaseModel):
+    """Response schema for live scrape + prediction endpoint."""
+
+    status: str
+    batting_team: str | None = None
+    bowling_team: str | None = None
+    runs: int | None = None
+    wickets: int | None = None
+    overs: float | None = None
+    predicted_winner: str | None = None
+    win_percentage: str | None = None
+    predicted_score: int | None = None
+    target_over: int | None = None
+
+
+class SimulationResponse(BaseModel):
+    """Response schema for simulation summary."""
+
+    total_predictions: int
+    correct: int
+    wrong: int
+    accuracy: float
+
+
+app = FastAPI(
+    title="IPL Live Prediction API",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS config (set APP_CORS_ORIGINS as comma-separated URLs in production).
+cors_env = os.getenv("APP_CORS_ORIGINS", "*")
+allow_origins = ["*"] if cors_env.strip() == "*" else [item.strip() for item in cors_env.split(",") if item.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
+    """Handle predictable business validation errors."""
+    logger.warning("Validation/business error: %s", exc)
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(_: Request, exc: Exception) -> JSONResponse:
+    """Catch unexpected errors with sanitized response."""
+    logger.exception("Unhandled server error: %s", exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error."},
+    )
+
+
+@app.get("/health", tags=["health"])
+def health() -> Dict[str, str]:
+    """Basic health endpoint."""
+    return {"status": "ok"}
+
+
+@app.post("/predict", response_model=PredictResponse, tags=["prediction"])
+def predict(payload: PredictRequest) -> PredictResponse:
+    """
+    Predict win probability and final score from live match state.
+
+    Request JSON:
+    {
+      "batting_team": "...",
+      "bowling_team": "...",
+      "runs": 85,
+      "wickets": 3,
+      "overs": 10.2
+    }
+    """
+    try:
+        output: Dict[str, Any] = predict_live(
+            batting_team=payload.batting_team,
+            bowling_team=payload.bowling_team,
+            runs=payload.runs,
+            wickets=payload.wickets,
+            overs=payload.overs,
+        )
+    except FileNotFoundError as exc:
+        logger.error("Model artifact missing: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model artifacts are unavailable. Train/download models first.",
+        ) from exc
+    except ValueError:
+        raise
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Prediction failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Prediction failed due to server error.",
+        ) from exc
+
+    predicted_winner = output.get("predicted_winner")
+    win_percentage = output.get("win_percentage")
+    predicted_score = output.get("predicted_score")
+    target_over = output.get("target_over")
+
+    if predicted_winner is None or win_percentage is None or predicted_score is None or target_over is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Model response missing required prediction fields.",
+        )
+
+    return PredictResponse(
+        predicted_winner=str(predicted_winner),
+        win_percentage=str(win_percentage),
+        predicted_score=int(round(float(predicted_score))),
+        target_over=int(target_over),
+    )
+
+
+@app.get("/live", response_model=LiveResponse, tags=["prediction"])
+def live_prediction() -> LiveResponse:
+    """
+    Fetch live IPL state from scraper and return model prediction.
+
+    Returns:
+    - {"status": "no_match"} when no live IPL match is currently found.
+    - full live + prediction payload when a live match is available.
+    """
+    try:
+        live_data = get_live_match_data()
+    except CricinfoScrapeError as exc:
+        logger.warning("Live scrape failed: %s", exc)
+        return LiveResponse(status="no_match")
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Unexpected live scrape error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch live match data.",
+        ) from exc
+
+    if not live_data:
+        return LiveResponse(status="no_match")
+
+    try:
+        prediction = predict_live(
+            batting_team=live_data["batting_team"],
+            bowling_team=live_data["bowling_team"],
+            runs=live_data["runs"],
+            wickets=live_data["wickets"],
+            overs=live_data["overs"],
+        )
+    except FileNotFoundError as exc:
+        logger.error("Model artifact missing for /live: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model artifacts are unavailable. Train/download models first.",
+        ) from exc
+    except ValueError as exc:
+        logger.warning("Prediction validation issue for /live: %s", exc)
+        return LiveResponse(status="no_match")
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Prediction failed for /live: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to compute live prediction.",
+        ) from exc
+
+    return LiveResponse(
+        status="live",
+        batting_team=str(live_data["batting_team"]),
+        bowling_team=str(live_data["bowling_team"]),
+        runs=int(live_data["runs"]),
+        wickets=int(live_data["wickets"]),
+        overs=float(live_data["overs"]),
+        predicted_winner=str(prediction.get("predicted_winner", "")),
+        win_percentage=str(prediction.get("win_percentage", "")),
+        predicted_score=int(round(float(prediction.get("predicted_score", 0)))),
+        target_over=int(prediction.get("target_over", 20)),
+    )
+
+
+@app.post("/simulate", response_model=SimulationResponse, tags=["simulation"])
+def simulate_matches() -> SimulationResponse:
+    """
+    Run match simulation checkpoints and return accuracy summary.
+
+    Pipeline:
+    1. Run simulation engine using deliveries.csv
+    2. Compute prediction accuracy metrics
+    """
+    try:
+        rows = run_simulation(
+            deliveries_path="data/raw/deliveries.csv",
+            save_path="data/processed/simulation_results.csv",
+        )
+        stats = summarize_predictions(rows)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Simulation failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Simulation failed due to server error.",
+        ) from exc
+
+    return SimulationResponse(
+        total_predictions=int(stats["total_predictions"]),
+        correct=int(stats["correct"]),
+        wrong=int(stats["wrong"]),
+        accuracy=float(stats["accuracy"]),
+    )
+
+
+# Serve frontend from same FastAPI process for one-click local run.
+if FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+else:
+    logger.warning("Frontend directory not found at %s", FRONTEND_DIR)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+----- END FILE: app.py -----
+
+----- BEGIN FILE: backend\app\__init__.py -----
+"""Backend application package for IPL prediction service."""
+
+----- END FILE: backend\app\__init__.py -----
+
+----- BEGIN FILE: backend\app\api.py -----
+"""FastAPI route handlers for model training and prediction APIs."""
+
+from fastapi import APIRouter, HTTPException
+
+from .schemas import (
+    LiveMatchResponse,
+    LivePredictionRequest,
+    PredictionResponse,
+    PrematchPredictionRequest,
+)
+from .services.live_service import LiveService
+from .services.prediction_service import PredictionService
+
+router = APIRouter()
+prediction_service = PredictionService()
+live_service = LiveService(prediction_service=prediction_service)
+
+
+@router.get("/health")
+def health_check() -> dict[str, str]:
+    """Health endpoint to verify API status."""
+    return {"status": "ok"}
+
+
+@router.post("/predict/prematch", response_model=PredictionResponse)
+def predict_prematch(payload: PrematchPredictionRequest) -> PredictionResponse:
+    """Predict winner before toss/match progression (placeholder)."""
+    try:
+        result = prediction_service.predict_prematch_winner(payload.model_dump())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    confidence = float(max(result["probabilities"]))
+    return PredictionResponse(
+        model_name="winner_model",
+        prediction=result["prediction"],
+        confidence=confidence,
+        metadata={"probabilities": result["probabilities"]},
+    )
+
+
+@router.post("/predict/live", response_model=PredictionResponse)
+def predict_live(payload: LivePredictionRequest) -> PredictionResponse:
+    """Predict live outcome based on current score state."""
+    try:
+        result = live_service.live_prediction(payload.model_dump(exclude={"match_id"}))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return PredictionResponse(
+        model_name="score_model",
+        prediction=result["predicted_final_score"],
+        confidence=None,
+        metadata={"match_id": payload.match_id},
+    )
+
+
+@router.get("/live/match/{match_id}", response_model=LiveMatchResponse)
+def get_live_match(match_id: str) -> LiveMatchResponse:
+    """Fetch live score data using scraper/API integration placeholder."""
+    data = live_service.get_live_match_data(match_id)
+    return LiveMatchResponse(match_id=match_id, source=data.get("source", "unknown"), raw_data=data)
+
+----- END FILE: backend\app\api.py -----
+
+----- BEGIN FILE: backend\app\config.py -----
+"""Application configuration module."""
+
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_RAW_DIR = BASE_DIR / "data" / "raw"
+DATA_PROCESSED_DIR = BASE_DIR / "data" / "processed"
+MODELS_DIR = BASE_DIR / "models"
+
+MATCHES_CSV_PATH = DATA_RAW_DIR / "matches.csv"
+DELIVERIES_CSV_PATH = DATA_RAW_DIR / "deliveries.csv"
+
+WINNER_MODEL_PATH = MODELS_DIR / "winner_model.joblib"
+SCORE_MODEL_PATH = MODELS_DIR / "score_model.joblib"
+
+----- END FILE: backend\app\config.py -----
+
+----- BEGIN FILE: backend\app\main.py -----
+"""FastAPI app entrypoint."""
+
+from fastapi import FastAPI
+
+from .api import router
+
+
+def create_app() -> FastAPI:
+    """Create and configure FastAPI application."""
+    app = FastAPI(title="IPL Live Prediction API", version="0.1.0")
+    app.include_router(router, prefix="/api/v1", tags=["prediction"])
+    return app
+
+
+app = create_app()
+
+----- END FILE: backend\app\main.py -----
+
+----- BEGIN FILE: backend\app\schemas.py -----
+"""Pydantic schemas for request and response payloads."""
+
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Field
+
+
+class PrematchPredictionRequest(BaseModel):
+    """Input payload for pre-match winner prediction."""
+
+    team1: str = Field(..., description="First team name")
+    team2: str = Field(..., description="Second team name")
+    venue: Optional[str] = Field(default=None, description="Match venue")
+    toss_winner: Optional[str] = Field(default=None, description="Toss winner")
+    toss_decision: Optional[str] = Field(
+        default=None, description="Toss decision (bat/field)"
+    )
+
+
+class LivePredictionRequest(BaseModel):
+    """Input payload for live prediction after match starts."""
+
+    match_id: str = Field(..., description="Unique match identifier")
+    batting_team: str
+    bowling_team: str
+    current_runs: int
+    wickets: int
+    overs: float
+    target: Optional[int] = Field(default=None, description="Target runs in chase")
+
+
+class PredictionResponse(BaseModel):
+    """Unified prediction response payload."""
+
+    model_name: str
+    prediction: Any
+    confidence: Optional[float] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class LiveMatchResponse(BaseModel):
+    """Live match score payload from scrape/API source."""
+
+    match_id: str
+    source: str
+    raw_data: Dict[str, Any]
+
+----- END FILE: backend\app\schemas.py -----
+
+----- BEGIN FILE: backend\app\services\__init__.py -----
+"""Service layer package for data, prediction, and live operations."""
+
+----- END FILE: backend\app\services\__init__.py -----
+
+----- BEGIN FILE: backend\app\services\data_service.py -----
+"""Data service for loading and persisting processed datasets."""
+
+from pathlib import Path
+from typing import Tuple
+
+import pandas as pd
+
+from ..config import DATA_PROCESSED_DIR, DELIVERIES_CSV_PATH, MATCHES_CSV_PATH
+from ..utils.helpers import ensure_dir
+from ..utils.preprocessing import (
+    load_datasets,
+    preprocess_deliveries,
+    preprocess_matches,
+)
+
+
+class DataService:
+    """Provides dataset IO and preprocessing orchestration."""
+
+    def __init__(self, processed_dir: Path = DATA_PROCESSED_DIR) -> None:
+        self.processed_dir = processed_dir
+        ensure_dir(self.processed_dir)
+
+    def load_raw_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Load raw CSV files from data/raw."""
+        return load_datasets(MATCHES_CSV_PATH, DELIVERIES_CSV_PATH)
+
+    def preprocess(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Run cleaning pipeline for matches and deliveries datasets."""
+        matches_df, deliveries_df = self.load_raw_data()
+        return preprocess_matches(matches_df), preprocess_deliveries(deliveries_df)
+
+    def save_processed(
+        self,
+        matches_df: pd.DataFrame,
+        deliveries_df: pd.DataFrame,
+    ) -> None:
+        """Save processed datasets to data/processed."""
+        matches_out = self.processed_dir / "matches_processed.csv"
+        deliveries_out = self.processed_dir / "deliveries_processed.csv"
+        matches_df.to_csv(matches_out, index=False)
+        deliveries_df.to_csv(deliveries_out, index=False)
+
+----- END FILE: backend\app\services\data_service.py -----
+
+----- BEGIN FILE: backend\app\services\live_service.py -----
+"""Live match service that combines scraping and prediction logic."""
+
+from typing import Any, Dict
+
+from .prediction_service import PredictionService
+from .scrape_service import ScrapeService
+
+
+class LiveService:
+    """Coordinates live data fetch and inference."""
+
+    def __init__(
+        self,
+        scrape_service: ScrapeService | None = None,
+        prediction_service: PredictionService | None = None,
+    ) -> None:
+        self.scrape_service = scrape_service or ScrapeService()
+        self.prediction_service = prediction_service or PredictionService()
+
+    def get_live_match_data(self, match_id: str) -> Dict[str, Any]:
+        """Fetch raw live data for a match."""
+        return self.scrape_service.scrape_live_match_data(match_id)
+
+    def live_prediction(self, match_state: Dict[str, float]) -> Dict[str, float]:
+        """Run live model prediction based on current match state."""
+        return self.prediction_service.predict_live_outcome(match_state)
+
+----- END FILE: backend\app\services\live_service.py -----
+
+----- BEGIN FILE: backend\app\services\prediction_service.py -----
+"""Model training and inference logic for IPL predictions."""
+
+from pathlib import Path
+from typing import Dict, Tuple
+
+import pandas as pd
+from xgboost import XGBClassifier, XGBRegressor
+
+from ..config import MODELS_DIR, SCORE_MODEL_PATH, WINNER_MODEL_PATH
+from ..utils.features import build_live_features, build_prematch_features
+from ..utils.helpers import ensure_dir, load_joblib, save_joblib
+
+
+class PredictionService:
+    """Owns model lifecycle for winner and score prediction models."""
+
+    def __init__(self, models_dir: Path = MODELS_DIR) -> None:
+        self.models_dir = models_dir
+        ensure_dir(self.models_dir)
+
+    def train_winner_model(self, feature_df: pd.DataFrame, target_col: str) -> XGBClassifier:
+        """Train pre-match winner classifier (placeholder baseline)."""
+        if target_col not in feature_df.columns:
+            raise ValueError(f"Target column '{target_col}' not found.")
+
+        x = feature_df.drop(columns=[target_col])
+        y = feature_df[target_col]
+
+        model = XGBClassifier(
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            subsample=0.9,
+            colsample_bytree=0.9,
+            objective="binary:logistic",
+            tree_method="hist",  # CPU-friendly
+            n_jobs=-1,
+            random_state=42,
+        )
+        model.fit(x, y)
+        save_joblib(model, WINNER_MODEL_PATH)
+        return model
+
+    def train_score_model(self, feature_df: pd.DataFrame, target_col: str) -> XGBRegressor:
+        """Train live score regressor (placeholder baseline)."""
+        if target_col not in feature_df.columns:
+            raise ValueError(f"Target column '{target_col}' not found.")
+
+        x = feature_df.drop(columns=[target_col])
+        y = feature_df[target_col]
+
+        model = XGBRegressor(
+            n_estimators=200,
+            max_depth=6,
+            learning_rate=0.05,
+            subsample=0.9,
+            colsample_bytree=0.9,
+            objective="reg:squarederror",
+            tree_method="hist",  # CPU-friendly
+            n_jobs=-1,
+            random_state=42,
+        )
+        model.fit(x, y)
+        save_joblib(model, SCORE_MODEL_PATH)
+        return model
+
+    def load_models(self) -> Tuple[XGBClassifier, XGBRegressor]:
+        """Load winner and score models from disk."""
+        winner_model = load_joblib(WINNER_MODEL_PATH)
+        score_model = load_joblib(SCORE_MODEL_PATH)
+        return winner_model, score_model
+
+    def predict_prematch_winner(self, payload: Dict[str, object]) -> Dict[str, object]:
+        """Generate pre-match winner probability using saved classifier."""
+        winner_model = load_joblib(WINNER_MODEL_PATH)
+        features = build_prematch_features(pd.DataFrame([payload]))
+        probabilities = winner_model.predict_proba(features)[0].tolist()
+        prediction = int(probabilities[1] >= 0.5)
+        return {"prediction": prediction, "probabilities": probabilities}
+
+    def predict_live_outcome(self, match_state: Dict[str, float]) -> Dict[str, float]:
+        """Generate live score/win proxy prediction from running match state."""
+        score_model = load_joblib(SCORE_MODEL_PATH)
+        features = build_live_features(match_state)
+        predicted_score = float(score_model.predict(features)[0])
+        return {"predicted_final_score": predicted_score}
+
+----- END FILE: backend\app\services\prediction_service.py -----
+
+----- BEGIN FILE: backend\app\services\scrape_service.py -----
+"""Scraper/API client for live IPL match data."""
+
+from typing import Any, Dict, Optional
+
+import requests
+from bs4 import BeautifulSoup
+
+
+class ScrapeService:
+    """Fetches and parses live score data from an external source."""
+
+    def __init__(self, base_url: Optional[str] = None) -> None:
+        self.base_url = base_url or "https://example.com/live-score"
+
+    def scrape_live_match_data(self, match_id: str) -> Dict[str, Any]:
+        """
+        Scrape live match details.
+
+        Replace parsing logic with provider-specific selectors when integrating
+        real score source or official API.
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/{match_id}",
+                timeout=10,
+                headers={"User-Agent": "cric-predictor/0.1"},
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            return {"match_id": match_id, "error": str(exc), "source": self.base_url}
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        title = soup.title.text.strip() if soup.title else "Live score page"
+        return {
+            "match_id": match_id,
+            "source": self.base_url,
+            "title": title,
+            "raw_html_length": len(response.text),
+        }
+
+----- END FILE: backend\app\services\scrape_service.py -----
+
+----- BEGIN FILE: backend\app\utils\__init__.py -----
+"""Utility helpers for preprocessing and feature generation."""
+
+----- END FILE: backend\app\utils\__init__.py -----
+
+----- BEGIN FILE: backend\app\utils\features.py -----
+"""Feature engineering utilities for pre-match and live models."""
+
+from typing import Dict
+
+import numpy as np
+import pandas as pd
+
+
+def build_prematch_features(matches_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build match-level features for pre-match winner prediction.
+
+    Output is numeric and model-ready for XGBoost training.
+    """
+    df = matches_df.copy()
+
+    required = {"team1", "team2"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"matches dataframe missing required columns: {sorted(missing)}")
+
+    if "id" not in df.columns:
+        df["id"] = np.arange(1, len(df) + 1, dtype=int)
+
+    has_target = "winner" in df.columns
+    if has_target:
+        # Keep only completed matches with known winners during training.
+        df["winner"] = df["winner"].fillna("unknown").astype(str)
+        df = df[df["winner"] != "unknown"].copy()
+
+    if "season" not in df.columns:
+        df["season"] = 0
+    if "toss_winner" not in df.columns:
+        df["toss_winner"] = "unknown"
+    if "toss_decision" not in df.columns:
+        df["toss_decision"] = "unknown"
+    if "venue" not in df.columns:
+        df["venue"] = "unknown"
+    if "city" not in df.columns:
+        df["city"] = "unknown"
+
+    df["team1_id"] = pd.Categorical(df["team1"]).codes
+    df["team2_id"] = pd.Categorical(df["team2"]).codes
+    df["toss_winner_id"] = pd.Categorical(df["toss_winner"]).codes
+    df["venue_id"] = pd.Categorical(df["venue"]).codes
+    df["city_id"] = pd.Categorical(df["city"]).codes
+    df["toss_decision_bat"] = (df["toss_decision"].astype(str).str.lower() == "bat").astype(int)
+
+    feature_cols = [
+        "id",
+        "season",
+        "team1_id",
+        "team2_id",
+        "toss_winner_id",
+        "toss_decision_bat",
+        "venue_id",
+        "city_id",
+    ]
+    if has_target:
+        # Binary target: did team1 win?
+        df["team1_won"] = (df["winner"] == df["team1"]).astype(int)
+        feature_cols.append("team1_won")
+    return df[feature_cols].copy()
+
+
+def build_ball_by_ball_features(deliveries_df: pd.DataFrame, matches_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build ball-level and live-state features for each innings snapshot.
+
+    Includes required live fields:
+    runs, wickets, overs, balls_left, current_run_rate, required_run_rate.
+    """
+    df = deliveries_df.copy()
+
+    required = {"match_id", "inning", "batting_team", "bowling_team", "total_runs"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"deliveries dataframe missing required columns: {sorted(missing)}")
+
+    if "over" not in df.columns:
+        df["over"] = 0
+    if "ball" not in df.columns:
+        df["ball"] = 0
+    if "wide_runs" not in df.columns:
+        df["wide_runs"] = 0
+    if "noball_runs" not in df.columns:
+        df["noball_runs"] = 0
+    if "dismissal_kind" not in df.columns:
+        df["dismissal_kind"] = "none"
+    if "player_dismissed" not in df.columns:
+        df["player_dismissed"] = ""
+
+    sort_cols = ["match_id", "inning", "over", "ball"]
+    df = df.sort_values(sort_cols).reset_index(drop=True)
+
+    # Track legal balls (wides/no-balls do not consume a legal delivery).
+    df["is_legal_delivery"] = (
+        (df["wide_runs"].fillna(0).astype(float) == 0)
+        & (df["noball_runs"].fillna(0).astype(float) == 0)
+    ).astype(int)
+
+    df["balls_bowled"] = df.groupby(["match_id", "inning"])["is_legal_delivery"].cumsum()
+    df["runs"] = df.groupby(["match_id", "inning"])["total_runs"].cumsum()
+
+    dismissal_kind = df["dismissal_kind"].fillna("none").astype(str).str.lower()
+    player_dismissed = df["player_dismissed"].fillna("").astype(str).str.strip()
+    df["wicket_fell"] = ((player_dismissed != "") & (dismissal_kind != "retired hurt")).astype(int)
+    df["wickets"] = df.groupby(["match_id", "inning"])["wicket_fell"].cumsum()
+
+    innings_balls = 120
+    df["overs"] = df["balls_bowled"] / 6.0
+    df["balls_left"] = (innings_balls - df["balls_bowled"]).clip(lower=0)
+
+    df["current_run_rate"] = np.where(
+        df["balls_bowled"] > 0,
+        (df["runs"] * 6.0) / df["balls_bowled"],
+        0.0,
+    )
+
+    first_innings_totals = (
+        df[df["inning"] == 1]
+        .groupby("match_id", as_index=False)["total_runs"]
+        .sum()
+        .rename(columns={"total_runs": "first_innings_score"})
+    )
+    df = df.merge(first_innings_totals, on="match_id", how="left")
+    df["target"] = np.where(df["inning"] == 2, df["first_innings_score"] + 1, np.nan)
+    df["runs_remaining"] = np.where(df["inning"] == 2, (df["target"] - df["runs"]).clip(lower=0), np.nan)
+
+    df["required_run_rate"] = np.where(
+        (df["inning"] == 2) & (df["balls_left"] > 0),
+        (df["runs_remaining"] * 6.0) / df["balls_left"],
+        0.0,
+    )
+
+    # Final score per innings is a useful training target for score prediction.
+    innings_totals = (
+        df.groupby(["match_id", "inning"], as_index=False)["total_runs"]
+        .sum()
+        .rename(columns={"total_runs": "target_final_score"})
+    )
+    df = df.merge(innings_totals, on=["match_id", "inning"], how="left")
+
+    # Add winner context if available.
+    if {"id", "winner"}.issubset(matches_df.columns):
+        winner_frame = matches_df[["id", "winner"]].rename(columns={"id": "match_id", "winner": "match_winner"})
+        df = df.merge(winner_frame, on="match_id", how="left")
+
+    return df
+
+
+def build_winner_training_dataset(matches_df: pd.DataFrame) -> pd.DataFrame:
+    """Build pre-match winner training dataset."""
+    return build_prematch_features(matches_df)
+
+
+def build_score_training_dataset(ball_features_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build live score training dataset from ball-level snapshots.
+
+    Model target: `target_final_score`.
+    """
+    df = ball_features_df.copy()
+    if "target_final_score" not in df.columns:
+        raise ValueError("ball_features_df missing target_final_score")
+
+    df["batting_team_id"] = pd.Categorical(df["batting_team"]).codes
+    df["bowling_team_id"] = pd.Categorical(df["bowling_team"]).codes
+
+    feature_cols = [
+        "match_id",
+        "inning",
+        "batting_team_id",
+        "bowling_team_id",
+        "runs",
+        "wickets",
+        "overs",
+        "balls_left",
+        "current_run_rate",
+        "required_run_rate",
+        "target",
+        "target_final_score",
+    ]
+    available_cols = [col for col in feature_cols if col in df.columns]
+    out = df[available_cols].copy()
+    if "target" in out.columns:
+        out["target"] = out["target"].fillna(0.0)
+    else:
+        out["target"] = 0.0
+    return out
+
+
+def build_live_features(match_state: Dict[str, float]) -> pd.DataFrame:
+    """
+    Convert live match state dict into a model-ready dataframe.
+
+    Expected keys can include:
+    current_runs, wickets, overs, target, required_rr, current_rr, etc.
+    """
+    runs = float(match_state.get("runs", match_state.get("current_runs", 0.0)))
+    wickets = float(match_state.get("wickets", 0.0))
+    overs = float(match_state.get("overs", 0.0))
+    target = float(match_state.get("target", 0.0)) if match_state.get("target") is not None else 0.0
+
+    # Handles cricket-style over notation (e.g., 9.4 means 9 overs + 4 balls).
+    whole_overs = int(overs)
+    partial_balls = int(round((overs - whole_overs) * 10))
+    balls_bowled = max((whole_overs * 6) + partial_balls, 0)
+    balls_left = max(120 - balls_bowled, 0)
+    current_run_rate = (runs / overs) if overs > 0 else 0.0
+    runs_remaining = max(target - runs, 0.0)
+    required_run_rate = (runs_remaining * 6.0 / balls_left) if balls_left > 0 else 0.0
+
+    payload = {
+        "runs": runs,
+        "wickets": wickets,
+        "overs": overs,
+        "balls_left": float(balls_left),
+        "current_run_rate": current_run_rate,
+        "required_run_rate": required_run_rate,
+        "target": target,
+    }
+    return pd.DataFrame([payload])
+----- END FILE: backend\app\utils\features.py -----
+
+----- BEGIN FILE: backend\app\utils\helpers.py -----
+"""Generic helper utilities used across modules."""
+
+from pathlib import Path
+from typing import Any, Iterable
+
+import joblib
+import pandas as pd
+
+
+def ensure_dir(path: Path) -> None:
+    """Create a directory if it does not exist."""
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def save_joblib(obj: Any, path: Path) -> None:
+    """Persist Python object to disk using joblib."""
+    ensure_dir(path.parent)
+    joblib.dump(obj, path)
+
+
+def load_joblib(path: Path) -> Any:
+    """Load joblib artifact if present."""
+    if not path.exists():
+        raise FileNotFoundError(f"Model artifact not found: {path}")
+    return joblib.load(path)
+
+
+def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardize dataframe column names for predictable downstream code."""
+    out = df.copy()
+    out.columns = [str(col).strip().lower().replace(" ", "_") for col in out.columns]
+    return out
+
+
+def ensure_columns(df: pd.DataFrame, required_columns: Iterable[str], df_name: str) -> None:
+    """Validate that a dataframe contains required columns."""
+    missing = [col for col in required_columns if col not in df.columns]
+    if missing:
+        raise ValueError(f"{df_name} missing required columns: {missing}")
+
+
+def to_numeric(df: pd.DataFrame, columns: Iterable[str], fill_value: float = 0.0) -> pd.DataFrame:
+    """Safely coerce selected columns to numeric dtype."""
+    out = df.copy()
+    for col in columns:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(fill_value)
+    return out
+
+
+def save_csv(df: pd.DataFrame, path: Path) -> None:
+    """Persist dataframe to CSV with parent directory creation."""
+    ensure_dir(path.parent)
+    df.to_csv(path, index=False)
+----- END FILE: backend\app\utils\helpers.py -----
+
+----- BEGIN FILE: backend\app\utils\preprocessing.py -----
+"""Dataset loading, cleaning, and normalization utilities."""
+
+from pathlib import Path
+from typing import Dict, Tuple
+
+import pandas as pd
+
+from .helpers import clean_column_names, ensure_columns, to_numeric
+
+
+TEAM_NAME_MAP: Dict[str, str] = {
+    "delhi_daredevils": "delhi_capitals",
+    "deccan_chargers": "sunrisers_hyderabad",
+    "kings_xi_punjab": "punjab_kings",
+    "rising_pune_supergiants": "rising_pune_supergiant",
+    "pune_warriors": "pune_warriors_india",
+}
+
+
+def _normalize_team_name(name: object) -> str:
+    """Normalize a raw team name into a canonical token."""
+    if pd.isna(name):
+        return "unknown_team"
+    normalized = str(name).strip().lower().replace("&", "and").replace(" ", "_")
+    return TEAM_NAME_MAP.get(normalized, normalized)
+
+
+def _fill_text_columns(df: pd.DataFrame, default_value: str = "unknown") -> pd.DataFrame:
+    """Fill all object/string columns with a default placeholder."""
+    out = df.copy()
+    text_cols = out.select_dtypes(include=["object"]).columns.tolist()
+    for col in text_cols:
+        out[col] = out[col].fillna(default_value)
+    return out
+
+
+def load_datasets(
+    matches_path: Path,
+    deliveries_path: Path,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Load IPL matches and deliveries datasets.
+
+    CSV files are expected at:
+    - data/raw/matches.csv
+    - data/raw/deliveries.csv
+    """
+    if not matches_path.exists():
+        raise FileNotFoundError(f"Missing matches dataset at {matches_path}")
+    if not deliveries_path.exists():
+        raise FileNotFoundError(f"Missing deliveries dataset at {deliveries_path}")
+
+    matches_df = pd.read_csv(matches_path, low_memory=False)
+    deliveries_df = pd.read_csv(deliveries_path, low_memory=False)
+    return matches_df, deliveries_df
+
+
+def preprocess_matches(matches_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean matches dataset and normalize team naming.
+
+    Output schema is robust to common IPL dataset variants.
+    """
+    df = clean_column_names(matches_df)
+
+    # Harmonize match identifier column name.
+    if "match_id" in df.columns and "id" not in df.columns:
+        df = df.rename(columns={"match_id": "id"})
+    ensure_columns(df, required_columns=["id", "team1", "team2"], df_name="matches")
+
+    # Normalize canonical text fields if present.
+    team_columns = ["team1", "team2", "toss_winner", "winner"]
+    for col in team_columns:
+        if col in df.columns:
+            df[col] = df[col].map(_normalize_team_name)
+
+    if "toss_decision" in df.columns:
+        df["toss_decision"] = (
+            df["toss_decision"].astype(str).str.strip().str.lower().fillna("unknown")
+        )
+
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["season"] = pd.to_numeric(df.get("season"), errors="coerce")
+        df["season"] = df["season"].fillna(df["date"].dt.year)
+
+    numeric_cols = ["id", "season", "dl_applied", "win_by_runs", "win_by_wickets"]
+    df = to_numeric(df, numeric_cols, fill_value=0.0)
+    df = _fill_text_columns(df, default_value="unknown")
+    return df
+
+
+def preprocess_deliveries(deliveries_df: pd.DataFrame) -> pd.DataFrame:
+    """Clean deliveries data with robust numeric and text handling."""
+    df = clean_column_names(deliveries_df)
+
+    # Harmonize match identifier column name.
+    if "id" in df.columns and "match_id" not in df.columns:
+        df = df.rename(columns={"id": "match_id"})
+    ensure_columns(
+        df,
+        required_columns=["match_id", "inning", "batting_team", "bowling_team", "total_runs"],
+        df_name="deliveries",
+    )
+
+    team_columns = ["batting_team", "bowling_team"]
+    for col in team_columns:
+        if col in df.columns:
+            df[col] = df[col].map(_normalize_team_name)
+
+    numeric_cols = [
+        "match_id",
+        "inning",
+        "over",
+        "ball",
+        "total_runs",
+        "wide_runs",
+        "noball_runs",
+        "batsman_runs",
+        "extra_runs",
+        "is_wicket",
+    ]
+    df = to_numeric(df, numeric_cols, fill_value=0.0)
+
+    # Dismissal columns are needed for wicket tracking.
+    if "player_dismissed" not in df.columns:
+        df["player_dismissed"] = ""
+    if "dismissal_kind" not in df.columns:
+        df["dismissal_kind"] = "none"
+
+    df["player_dismissed"] = df["player_dismissed"].fillna("").astype(str).str.strip()
+    df["dismissal_kind"] = df["dismissal_kind"].fillna("none").astype(str).str.strip().str.lower()
+
+    df = _fill_text_columns(df, default_value="unknown")
+    return df
+
+
+def get_team_id_mapping(matches_df: pd.DataFrame, deliveries_df: pd.DataFrame) -> Dict[str, int]:
+    """Create deterministic team-to-integer mapping for model-ready features."""
+    teams = set()
+    for col in ["team1", "team2", "toss_winner", "winner"]:
+        if col in matches_df.columns:
+            teams.update(matches_df[col].dropna().astype(str).tolist())
+    for col in ["batting_team", "bowling_team"]:
+        if col in deliveries_df.columns:
+            teams.update(deliveries_df[col].dropna().astype(str).tolist())
+
+    teams = sorted(team for team in teams if team)
+    return {team: idx for idx, team in enumerate(teams)}
+----- END FILE: backend\app\utils\preprocessing.py -----
+
+----- BEGIN FILE: data_builder.py -----
+"""Build unified per-ball training dataset for future model improvement."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import List
+
+import pandas as pd
+
+
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = [str(c).strip().lower().replace(" ", "_") for c in out.columns]
+    return out
+
+
+def _first_existing(df: pd.DataFrame, candidates: List[str], default: str = "") -> pd.Series:
+    for col in candidates:
+        if col in df.columns:
+            return df[col]
+    return pd.Series([default] * len(df))
+
+
+def build_training_data(
+    matches_path: Path | str = "data/raw/matches.csv",
+    deliveries_path: Path | str = "data/raw/deliveries.csv",
+    output_path: Path | str = "data/training_data.csv",
+) -> Path:
+    """
+    Create per-ball CSV with match + contextual fields.
+
+    Required output columns:
+    - match_id, inning, over, ball, runs, wickets, batting_team, bowling_team,
+      batsman, bowler, stadium, city, weather
+    """
+    matches_file = Path(matches_path)
+    deliveries_file = Path(deliveries_path)
+    output_file = Path(output_path)
+
+    if not matches_file.exists():
+        raise FileNotFoundError(f"Missing matches file: {matches_file}")
+    if not deliveries_file.exists():
+        raise FileNotFoundError(f"Missing deliveries file: {deliveries_file}")
+
+    matches = _normalize_columns(pd.read_csv(matches_file, low_memory=False))
+    deliveries = _normalize_columns(pd.read_csv(deliveries_file, low_memory=False))
+
+    if "id" in matches.columns and "match_id" not in matches.columns:
+        matches = matches.rename(columns={"id": "match_id"})
+    if "id" in deliveries.columns and "match_id" not in deliveries.columns:
+        deliveries = deliveries.rename(columns={"id": "match_id"})
+    if "innings" in deliveries.columns and "inning" not in deliveries.columns:
+        deliveries = deliveries.rename(columns={"innings": "inning"})
+
+    required_deliveries = ["match_id", "inning", "over", "ball", "batting_team", "bowling_team", "total_runs"]
+    missing = [c for c in required_deliveries if c not in deliveries.columns]
+    if missing:
+        raise ValueError(f"deliveries.csv missing required columns: {missing}")
+
+    # Derived per-ball fields.
+    deliveries["runs"] = pd.to_numeric(deliveries["total_runs"], errors="coerce").fillna(0).astype(int)
+    if "is_wicket" not in deliveries.columns:
+        deliveries["is_wicket"] = 0
+    deliveries["is_wicket"] = pd.to_numeric(deliveries["is_wicket"], errors="coerce").fillna(0).astype(int)
+    deliveries = deliveries.sort_values(["match_id", "inning", "over", "ball"]).reset_index(drop=True)
+    deliveries["wickets"] = deliveries.groupby(["match_id", "inning"])["is_wicket"].cumsum().clip(upper=10)
+
+    deliveries["batsman"] = _first_existing(deliveries, ["batter", "batsman", "striker"], default="unknown")
+    deliveries["bowler"] = _first_existing(deliveries, ["bowler"], default="unknown")
+
+    match_meta = pd.DataFrame(
+        {
+            "match_id": matches["match_id"] if "match_id" in matches.columns else pd.Series([], dtype="int64"),
+            "stadium": _first_existing(matches, ["venue", "stadium"], default="unknown_stadium"),
+            "city": _first_existing(matches, ["city"], default="unknown_city"),
+            "winner": _first_existing(matches, ["winner"], default="unknown"),
+        }
+    )
+
+    merged = deliveries.merge(match_meta, on="match_id", how="left")
+    merged["weather"] = "unknown"
+
+    # Final required schema.
+    final = pd.DataFrame(
+        {
+            "match_id": pd.to_numeric(merged["match_id"], errors="coerce"),
+            "inning": pd.to_numeric(merged["inning"], errors="coerce"),
+            "over": pd.to_numeric(merged["over"], errors="coerce"),
+            "ball": pd.to_numeric(merged["ball"], errors="coerce"),
+            "runs": pd.to_numeric(merged["runs"], errors="coerce"),
+            "wickets": pd.to_numeric(merged["wickets"], errors="coerce"),
+            "batting_team": merged["batting_team"].astype(str),
+            "bowling_team": merged["bowling_team"].astype(str),
+            "batsman": merged["batsman"].astype(str),
+            "bowler": merged["bowler"].astype(str),
+            "stadium": merged["stadium"].fillna("unknown_stadium").astype(str),
+            "city": merged["city"].fillna("unknown_city").astype(str),
+            "weather": merged["weather"].astype(str),
+            "winner": merged["winner"].fillna("unknown").astype(str),
+        }
+    )
+
+    # Drop rows missing critical fields.
+    final = final.dropna(subset=["match_id", "inning", "over", "ball", "runs", "wickets"])
+    final = final[
+        (final["batting_team"].str.strip() != "")
+        & (final["bowling_team"].str.strip() != "")
+    ]
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    final.to_csv(output_file, index=False)
+    return output_file
+
+
+if __name__ == "__main__":
+    out = build_training_data()
+    print(f"Saved training dataset to: {out}")
+
+----- END FILE: data_builder.py -----
+
+----- BEGIN FILE: frontend\css\styles.css -----
+:root {
+  --bg: #090d16;
+  --bg-soft: #11192a;
+  --text: #e9f0ff;
+  --muted: #a8b5d9;
+  --accent: #47d5ff;
+  --accent-soft: rgba(71, 213, 255, 0.2);
+  --glass: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top left, #17233f 0%, var(--bg) 52%, #05070e 100%);
+  overflow-x: hidden;
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(44px);
+  z-index: -1;
+}
+
+.orb-one {
+  width: 240px;
+  height: 240px;
+  background: rgba(71, 213, 255, 0.28);
+  top: -60px;
+  left: -40px;
+}
+
+.orb-two {
+  width: 280px;
+  height: 280px;
+  background: rgba(96, 118, 255, 0.2);
+  bottom: -120px;
+  right: -60px;
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  margin: 16px;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.brand-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #00ffd0, #47d5ff);
+}
+
+.nav-btn {
+  text-decoration: none;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid rgba(71, 213, 255, 0.45);
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(71, 213, 255, 0.2);
+}
+
+.container {
+  width: min(1100px, calc(100% - 32px));
+  margin: 16px auto 40px;
+}
+
+.hero h1 {
+  margin: 8px 0;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.cards-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.match-card {
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.24s ease, border-color 0.24s ease;
+}
+
+.match-card:hover {
+  border-color: rgba(71, 213, 255, 0.5);
+}
+
+.card-top {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status {
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+}
+
+.status.live {
+  color: #8dffbf;
+  background: rgba(41, 220, 116, 0.18);
+  border-color: rgba(141, 255, 191, 0.4);
+}
+
+.status.upcoming {
+  color: #ffc779;
+  background: rgba(255, 178, 66, 0.16);
+  border-color: rgba(255, 199, 121, 0.4);
+}
+
+.match-card h3 {
+  margin: 14px 0 8px;
+  line-height: 1.35;
+}
+
+.preview {
+  margin: 0;
+  color: var(--muted);
+}
+
+.match-center-wrap {
+  width: min(980px, calc(100% - 24px));
+  margin: 24px auto 38px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 120px);
+}
+
+.scoreboard {
+  width: min(760px, 100%);
+  border-radius: 20px;
+  padding: 24px;
+  animation: riseIn 0.5s ease both;
+}
+
+.scoreboard h1 {
+  text-align: center;
+  margin: 8px 0 20px;
+  font-size: clamp(26px, 3vw, 36px);
+}
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner.hidden {
+  display: none;
+}
+
+.live-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.metric-label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metric-value {
+  display: block;
+  margin-top: 6px;
+  font-size: clamp(22px, 2.8vw, 30px);
+  font-weight: 700;
+  transition: transform 0.24s ease, opacity 0.24s ease, color 0.24s ease;
+}
+
+.prediction-panel {
+  margin-top: 18px;
+  border-radius: 14px;
+  background: rgba(71, 213, 255, 0.09);
+  border: 1px solid rgba(71, 213, 255, 0.25);
+  padding: 16px;
+}
+
+.prediction-panel h2 {
+  margin: 0 0 10px;
+}
+
+.prediction-line {
+  margin: 6px 0;
+  font-size: 18px;
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+.value-updated {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.small-note {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.page-shell {
+  width: min(900px, calc(100% - 32px));
+  margin: 40px auto;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.control-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.control-panel label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.input-select {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(9, 13, 22, 0.7);
+  color: var(--text);
+}
+
+.control-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ghost-btn {
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.ghost-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.stats-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.stat-card h3 {
+  margin: 8px 0 0;
+  font-size: clamp(24px, 3vw, 30px);
+}
+
+.stat-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.match-stats {
+  margin-top: 14px;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    margin: 10px;
+  }
+
+  .container {
+    width: calc(100% - 20px);
+  }
+
+  .live-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+----- END FILE: frontend\css\styles.css -----
+
+----- BEGIN FILE: frontend\index.html -----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL Match Predictions</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+
+  <header class="navbar glass">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span>CricAI Predictor</span>
+    </div>
+    <a class="nav-btn" href="./training.html">Training</a>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>IPL Match Predictions</h1>
+      <p>Live confidence previews for ongoing and upcoming IPL fixtures.</p>
+    </section>
+
+    <section class="cards-grid" id="matchCards"></section>
+  </main>
+
+  <script src="./js/main.js"></script>
+</body>
+</html>
+----- END FILE: frontend\index.html -----
+
+----- BEGIN FILE: frontend\js\main.js -----
+const LIVE_API_URL = "http://127.0.0.1:8000/live";
+const REFRESH_MS = 30000;
+
+function applyTiltEffect(card) {
+  card.addEventListener("mousemove", (event) => {
+    const rect = card.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const rotateX = ((y / rect.height) - 0.5) * -8;
+    const rotateY = ((x / rect.width) - 0.5) * 8;
+    card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+  });
+
+  card.addEventListener("mouseleave", () => {
+    card.style.transform = "perspective(700px) rotateX(0deg) rotateY(0deg)";
+  });
+}
+
+function buildNoMatchCard(message) {
+  const container = document.getElementById("matchCards");
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <article class="match-card glass">
+      <div class="card-top">
+        <span class="status upcoming">No Live Match</span>
+      </div>
+      <h3>No live IPL match currently</h3>
+      <p class="preview">${message}</p>
+    </article>
+  `;
+}
+
+function buildLiveCard(live) {
+  const container = document.getElementById("matchCards");
+  if (!container) {
+    return;
+  }
+
+  const team1 = live.batting_team || "Team 1";
+  const team2 = live.bowling_team || "Team 2";
+  const preview =
+    live.predicted_winner && live.win_percentage
+      ? `${live.predicted_winner} ${live.win_percentage} win chance`
+      : "Live prediction available";
+
+  container.innerHTML = `
+    <article class="match-card glass tilt-card"
+      data-team1="${team1}"
+      data-team2="${team2}"
+      data-status="Live"
+      data-preview="${preview}"
+      data-runs="${Number(live.runs || 0)}"
+      data-wickets="${Number(live.wickets || 0)}"
+      data-overs="${Number(live.overs || 0)}">
+      <div class="card-top">
+        <span class="status live">Live</span>
+      </div>
+      <h3>${team1} vs ${team2}</h3>
+      <p class="preview">Score: ${Number(live.runs || 0)}/${Number(live.wickets || 0)} (${Number(live.overs || 0)})</p>
+      <p class="preview">${preview}</p>
+    </article>
+  `;
+}
+
+function bindCardRedirects() {
+  const cards = document.querySelectorAll(".match-card");
+  cards.forEach((card) => {
+    if (!card.dataset.team1 || !card.dataset.team2) {
+      return;
+    }
+    applyTiltEffect(card);
+    card.addEventListener("click", () => {
+      const payload = {
+        team1: card.dataset.team1 || "",
+        team2: card.dataset.team2 || "",
+        status: card.dataset.status || "",
+        preview: card.dataset.preview || "",
+        runs: Number(card.dataset.runs || 0),
+        wickets: Number(card.dataset.wickets || 0),
+        overs: Number(card.dataset.overs || 0)
+      };
+      localStorage.setItem("selectedMatch", JSON.stringify(payload));
+      const params = new URLSearchParams(payload);
+      window.location.href = `./match.html?${params.toString()}`;
+    });
+  });
+}
+
+async function fetchLiveMatch() {
+  const response = await fetch(LIVE_API_URL, {
+    method: "GET",
+    headers: { Accept: "application/json" }
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`/live ${response.status}: ${detail}`);
+  }
+  return response.json();
+}
+
+async function refreshIndexCards() {
+  try {
+    const live = await fetchLiveMatch();
+    if (!live || live.status === "no_match") {
+      buildNoMatchCard("Auto-refreshing every 30 seconds.");
+      return;
+    }
+    buildLiveCard(live);
+    bindCardRedirects();
+  } catch (error) {
+    buildNoMatchCard(`Backend unavailable: ${error.message}`);
+  }
+}
+
+refreshIndexCards();
+setInterval(refreshIndexCards, REFRESH_MS);
+----- END FILE: frontend\js\main.js -----
+
+----- BEGIN FILE: frontend\js\match.js -----
+const UPDATE_MS = 30000;
+const LIVE_API_URL = "http://127.0.0.1:8000/live";
+
+function setStatus(message) {
+  const loading = document.getElementById("loadingState");
+  if (loading) {
+    loading.textContent = message;
+  }
+}
+
+function setLoading(isLoading) {
+  const spinner = document.getElementById("loadingSpinner");
+  if (spinner) {
+    spinner.classList.toggle("hidden", !isLoading);
+  }
+}
+
+function animateTextUpdate(element, value) {
+  if (!element) return;
+  element.classList.remove("value-updated");
+  element.textContent = value;
+  requestAnimationFrame(() => {
+    element.classList.add("value-updated");
+    setTimeout(() => element.classList.remove("value-updated"), 220);
+  });
+}
+
+function renderScoreboard(state) {
+  const title = document.getElementById("matchTitle");
+  const scoreText = document.getElementById("scoreText");
+  const oversText = document.getElementById("oversText");
+  const wicketsText = document.getElementById("wicketsText");
+
+  if (title) {
+    animateTextUpdate(title, `${state.team1} vs ${state.team2}`);
+  }
+  if (scoreText) {
+    animateTextUpdate(scoreText, `${state.runs}/${state.wickets}`);
+  }
+  if (oversText) {
+    animateTextUpdate(oversText, state.overs.toFixed(1));
+  }
+  if (wicketsText) {
+    animateTextUpdate(wicketsText, String(state.wickets));
+  }
+}
+
+function renderPrediction(prediction) {
+  const winnerText = document.getElementById("winnerText");
+  const scorePredictionText = document.getElementById("scorePredictionText");
+
+  if (winnerText) {
+    animateTextUpdate(
+      winnerText,
+      `Predicted Winner: ${prediction.predicted_winner} (${prediction.win_percentage})`
+    );
+  }
+  if (scorePredictionText) {
+    animateTextUpdate(
+      scorePredictionText,
+      `Predicted Score (${prediction.target_over} overs): ${prediction.predicted_score}`
+    );
+  }
+}
+
+function renderPredictionError(message) {
+  const winnerText = document.getElementById("winnerText");
+  const scorePredictionText = document.getElementById("scorePredictionText");
+  if (winnerText) {
+    animateTextUpdate(winnerText, "Predicted Winner: --");
+  }
+  if (scorePredictionText) {
+    animateTextUpdate(scorePredictionText, "Predicted Score: --");
+  }
+  setStatus(message);
+  setLoading(false);
+}
+
+function renderNoMatchState() {
+  renderScoreboard({
+    team1: "No live IPL match",
+    team2: "currently",
+    runs: 0,
+    wickets: 0,
+    overs: 0
+  });
+  renderPredictionError("No live IPL match currently");
+}
+
+async function fetchLiveData() {
+  const response = await fetch(LIVE_API_URL, {
+    method: "GET",
+    headers: { "Accept": "application/json" }
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`/live ${response.status}: ${detail}`);
+  }
+
+  return response.json();
+}
+
+async function updateFromLiveApi() {
+  setStatus("Fetching live match...");
+  setLoading(true);
+  try {
+    const live = await fetchLiveData();
+    if (!live || live.status === "no_match") {
+      renderNoMatchState();
+      return;
+    }
+
+    renderScoreboard({
+      team1: live.batting_team,
+      team2: live.bowling_team,
+      runs: Number(live.runs || 0),
+      wickets: Number(live.wickets || 0),
+      overs: Number(live.overs || 0)
+    });
+
+    renderPrediction({
+      predicted_winner: live.predicted_winner,
+      win_percentage: live.win_percentage,
+      predicted_score: live.predicted_score,
+      target_over: live.target_over
+    });
+    setStatus("Live IPL data connected (updates every 30s)");
+    setLoading(false);
+  } catch (error) {
+    renderPredictionError(`Prediction error: ${error.message}`);
+  }
+}
+
+function startLiveUpdates() {
+  setStatus("Loading live match data...");
+  setLoading(true);
+  updateFromLiveApi();
+  setInterval(updateFromLiveApi, UPDATE_MS);
+}
+
+startLiveUpdates();
+----- END FILE: frontend\js\match.js -----
+
+----- BEGIN FILE: frontend\js\training.js -----
+const startBtn = document.getElementById("startSimulation");
+const stopBtn = document.getElementById("stopSimulation");
+const simStatus = document.getElementById("simStatus");
+const matchSelect = document.getElementById("matchSelect");
+const SIM_API_URL = "http://127.0.0.1:8000/simulate";
+
+const totalPredictionsEl = document.getElementById("totalPredictions");
+const correctPredictionsEl = document.getElementById("correctPredictions");
+const wrongPredictionsEl = document.getElementById("wrongPredictions");
+const accuracyPercentEl = document.getElementById("accuracyPercent");
+const currentPredictionsEl = document.getElementById("currentPredictions");
+const currentCorrectWrongEl = document.getElementById("currentCorrectWrong");
+
+let timerId = null;
+let totalPredictions = 0;
+let correctPredictions = 0;
+let wrongPredictions = 0;
+let currentPredictions = 0;
+let currentCorrect = 0;
+let currentWrong = 0;
+let progressTimer = null;
+let progressTicks = 0;
+let controller = null;
+
+function refreshStats() {
+  const accuracy = totalPredictions ? Math.round((correctPredictions / totalPredictions) * 100) : 0;
+
+  if (totalPredictionsEl) totalPredictionsEl.textContent = String(totalPredictions);
+  if (correctPredictionsEl) correctPredictionsEl.textContent = String(correctPredictions);
+  if (wrongPredictionsEl) wrongPredictionsEl.textContent = String(wrongPredictions);
+  if (accuracyPercentEl) accuracyPercentEl.textContent = `${accuracy}%`;
+  if (currentPredictionsEl) currentPredictionsEl.textContent = `Predictions in this simulation: ${currentPredictions}`;
+  if (currentCorrectWrongEl) currentCorrectWrongEl.textContent = `Correct: ${currentCorrect} | Wrong: ${currentWrong}`;
+}
+
+function setStatus(message) {
+  if (!simStatus) return;
+  const now = new Date().toLocaleTimeString();
+  simStatus.textContent = `[${now}] ${message}`;
+}
+
+function startProgressPulse() {
+  progressTicks = 0;
+  progressTimer = setInterval(() => {
+    progressTicks += 1;
+    const dots = ".".repeat((progressTicks % 3) + 1);
+    setStatus(`Simulation running${dots}`);
+  }, 700);
+}
+
+function stopProgressPulse() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+}
+
+async function callSimulationApi(signal) {
+  const response = await fetch(SIM_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    signal
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`/simulate ${response.status}: ${detail}`);
+  }
+  return response.json();
+}
+
+async function startSimulation() {
+  if (timerId) {
+    setStatus("Simulation already running.");
+    return;
+  }
+
+  currentPredictions = 0;
+  currentCorrect = 0;
+  currentWrong = 0;
+  refreshStats();
+
+  const selectedMatch = matchSelect ? matchSelect.value : "MI_vs_CSK_2025";
+  setStatus(`Simulation started for ${selectedMatch}`);
+  startProgressPulse();
+
+  controller = new AbortController();
+  timerId = 1; // sentinel value for "running"
+  try {
+    const stats = await callSimulationApi(controller.signal);
+    totalPredictions = Number(stats.total_predictions || 0);
+    correctPredictions = Number(stats.correct || 0);
+    wrongPredictions = Number(stats.wrong || 0);
+    currentPredictions = totalPredictions;
+    currentCorrect = correctPredictions;
+    currentWrong = wrongPredictions;
+    refreshStats();
+    setStatus(`Simulation completed. Accuracy: ${Number(stats.accuracy || 0).toFixed(2)}%`);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      setStatus("Simulation stopped.");
+    } else {
+      setStatus(`Simulation error: ${error.message}`);
+    }
+  } finally {
+    stopProgressPulse();
+    timerId = null;
+    controller = null;
+  }
+}
+
+function stopSimulation() {
+  if (!timerId) {
+    setStatus("No active simulation.");
+    return;
+  }
+
+  if (controller) {
+    controller.abort();
+  }
+  stopProgressPulse();
+  timerId = null;
+  controller = null;
+  setStatus("Simulation stop requested.");
+}
+
+if (startBtn) startBtn.addEventListener("click", startSimulation);
+if (stopBtn) stopBtn.addEventListener("click", stopSimulation);
+refreshStats();
+----- END FILE: frontend\js\training.js -----
+
+----- BEGIN FILE: frontend\match.html -----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Match Prediction</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+
+  <header class="navbar glass">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span>CricAI Predictor</span>
+    </div>
+    <a class="nav-btn" href="./index.html">Back</a>
+  </header>
+
+  <main class="match-center-wrap">
+    <section class="scoreboard glass">
+      <div class="loading-row">
+        <span id="loadingSpinner" class="loading-spinner" aria-hidden="true"></span>
+        <p class="muted" id="loadingState">Loading live match data...</p>
+      </div>
+      <h1 id="matchTitle">Team 1 vs Team 2</h1>
+
+      <div class="live-metrics">
+        <div class="metric-card">
+          <span class="metric-label">Current Score</span>
+          <span id="scoreText" class="metric-value">0/0</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Overs</span>
+          <span id="oversText" class="metric-value">0.0</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Wickets</span>
+          <span id="wicketsText" class="metric-value">0</span>
+        </div>
+      </div>
+
+      <section class="prediction-panel">
+        <h2>Prediction</h2>
+        <p id="winnerText" class="prediction-line">Predicted Winner: --</p>
+        <p id="scorePredictionText" class="prediction-line">Predicted Score (20 overs): --</p>
+      </section>
+      <p class="muted small-note">Auto refresh: every 30 seconds (mock mode)</p>
+    </section>
+  </main>
+
+  <script src="./js/match.js"></script>
+</body>
+</html>
+----- END FILE: frontend\match.html -----
+
+----- BEGIN FILE: frontend\training.html -----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Dashboard</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+
+  <header class="navbar glass">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span>CricAI Predictor</span>
+    </div>
+    <a class="nav-btn" href="./index.html">Home</a>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Training Simulation Dashboard</h1>
+      <p>Mock controls and stats, ready to be connected with backend training APIs.</p>
+    </section>
+
+    <section class="glass control-panel">
+      <label for="matchSelect">Select Past Match</label>
+      <select id="matchSelect" class="input-select">
+        <option value="MI_vs_CSK_2025">MI vs CSK - 2025 Final</option>
+        <option value="RCB_vs_KKR_2025">RCB vs KKR - League Stage</option>
+        <option value="DC_vs_RR_2025">DC vs RR - Playoffs</option>
+      </select>
+      <div class="control-actions">
+        <button id="startSimulation" class="nav-btn" type="button">Start Simulation</button>
+        <button id="stopSimulation" class="ghost-btn" type="button">Stop Simulation</button>
+      </div>
+      <p id="simStatus" class="muted">Simulation idle.</p>
+    </section>
+
+    <section class="stats-grid">
+      <article class="glass stat-card">
+        <p class="stat-label">Total Predictions</p>
+        <h3 id="totalPredictions">0</h3>
+      </article>
+      <article class="glass stat-card">
+        <p class="stat-label">Correct Predictions</p>
+        <h3 id="correctPredictions">0</h3>
+      </article>
+      <article class="glass stat-card">
+        <p class="stat-label">Wrong Predictions</p>
+        <h3 id="wrongPredictions">0</h3>
+      </article>
+      <article class="glass stat-card">
+        <p class="stat-label">Accuracy %</p>
+        <h3 id="accuracyPercent">0%</h3>
+      </article>
+    </section>
+
+    <section class="glass match-stats">
+      <h2>Current Simulation Stats</h2>
+      <p id="currentPredictions">Predictions in this simulation: 0</p>
+      <p id="currentCorrectWrong">Correct: 0 | Wrong: 0</p>
+    </section>
+  </main>
+  <script src="./js/training.js"></script>
+</body>
+</html>
+----- END FILE: frontend\training.html -----
+
+----- BEGIN FILE: generate_allcode.py -----
+import os
+import datetime
+
+PROJECT_DIR = r"c:\Users\akshay prashar\OneDrive\Desktop\Cric\cric"
+OUTPUT_FILE = os.path.join(PROJECT_DIR, "allCode.txt")
+
+IGNORE_DIRS = {
+    "__pycache__", ".venv", "venv", "env", ".git", ".idea", ".vscode",
+    "models", "data", "docs", "tests", "notebooks"
+}
+IGNORE_EXTS = {
+    ".joblib", ".pkl", ".json", ".csv", ".parquet", ".sqlite", ".db",
+    ".png", ".jpg", ".jpeg", ".pyc", ".pyo", ".pyd", ".so"
+}
+
+def is_ignored(path):
+    for part in path.split(os.sep):
+        if part in IGNORE_DIRS or part.startswith("."):
+            if part not in [".gitignore"]: # allow .gitignore
+                return True
+    if any(path.endswith(ext) for ext in IGNORE_EXTS):
+        return True
+    return False
+
+def generate_all_code():
+    file_list = []
+    file_contents = {}
+
+    for root, dirs, files in os.walk(PROJECT_DIR):
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and not d.startswith('.')]
+        
+        rel_root = os.path.relpath(root, PROJECT_DIR)
+        if rel_root != ".":
+            file_list.append(rel_root)
+
+        for file in files:
+            full_path = os.path.join(root, file)
+            rel_path = os.path.relpath(full_path, PROJECT_DIR)
+            
+            if file == "allCode.txt":
+                file_list.append(rel_path)
+                continue
+                
+            if is_ignored(rel_path):
+                continue
+                
+            file_list.append(rel_path)
+            
+            try:
+                with open(full_path, "r", encoding="utf-8") as f:
+                    file_contents[rel_path] = f.read()
+            except Exception as e:
+                file_contents[rel_path] = f"<Error reading file: {e}>"
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(f"PROJECT: cric\n")
+        f.write(f"GENERATED: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        f.write("=== SUMMARY ===\n")
+        f.write("This is an IPL Live Prediction System utilizing FastAPI, XGBoost, and BeautifulSoup.\n")
+        f.write("Features include:\n")
+        f.write("- Pre-match winner prediction.\n")
+        f.write("- Live score prediction based on scraped Cricinfo data.\n")
+        f.write("- A frontend interface for tracking matches.\n")
+        f.write("- Retraining and simulation pipelines.\n\n")
+        
+        f.write("=== FILE STRUCTURE ===\n")
+        for item in sorted(file_list):
+            f.write(f"{item}\n")
+            
+        f.write("\n=== FILE CONTENTS ===\n\n")
+        for rel_path, content in sorted(file_contents.items()):
+            f.write(f"----- BEGIN FILE: {rel_path} -----\n")
+            f.write(content)
+            if not content.endswith("\n"):
+                f.write("\n")
+            f.write(f"----- END FILE: {rel_path} -----\n\n")
+
+if __name__ == "__main__":
+    generate_all_code()
+    print("allCode.txt updated successfully.")
+----- END FILE: generate_allcode.py -----
+
+----- BEGIN FILE: inference.py -----
+"""Inference utilities for live IPL prediction."""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Dict, List
+
+import joblib
+import numpy as np
+
+
+MODELS_DIR = Path("models")
+WINNER_MODEL_PATH = MODELS_DIR / "winner_model.pkl"
+SCORE_MODEL_PATH = MODELS_DIR / "score_model.pkl"
+PREPROCESSOR_PATH = MODELS_DIR / "preprocessing_objects.pkl"
+
+
+def _overs_to_balls(overs: float) -> int:
+    """
+    Convert cricket over notation to total balls bowled.
+
+    Example:
+    - 5.2 -> 32 balls
+    - 10.0 -> 60 balls
+    """
+    if overs < 0:
+        raise ValueError("overs must be non-negative")
+
+    whole_overs = int(overs)
+    partial_balls = int(round((overs - whole_overs) * 10))
+    if partial_balls > 5:
+        raise ValueError("Invalid overs format: decimal part must be between 0 and 5.")
+    return (whole_overs * 6) + partial_balls
+
+
+def _build_class_mapping(classes: List[str]) -> Dict[str, int]:
+    """Build string-to-index mapping from saved encoder classes."""
+    return {str(name): idx for idx, name in enumerate(classes)}
+
+
+def _canonical_team_name(name: str) -> str:
+    """Create a canonical team key for fuzzy team-name matching."""
+    return str(name).strip().lower().replace("&", "and").replace("-", " ").replace("_", " ")
+
+
+def _resolve_team_name(input_name: str, mapping: Dict[str, int]) -> str:
+    """Resolve user/scraper team name to an exact training-class name."""
+    if input_name in mapping:
+        return input_name
+
+    canonical_input = _canonical_team_name(input_name)
+    if canonical_input in mapping:
+        return canonical_input
+
+    reverse_lookup = {_canonical_team_name(k): k for k in mapping}
+    if canonical_input in reverse_lookup:
+        return reverse_lookup[canonical_input]
+
+    # Common IPL aliases.
+    aliases = {
+        "mi": "mumbai indians",
+        "csk": "chennai super kings",
+        "rcb": "royal challengers bengaluru",
+        "royal challengers bangalore": "royal challengers bengaluru",
+        "dc": "delhi capitals",
+        "dd": "delhi capitals",
+        "kkr": "kolkata knight riders",
+        "srh": "sunrisers hyderabad",
+        "pk": "punjab kings",
+        "kings xi punjab": "punjab kings",
+        "rr": "rajasthan royals",
+        "gt": "gujarat titans",
+        "lsg": "lucknow super giants",
+    }
+    expanded = aliases.get(canonical_input, canonical_input)
+    if expanded in reverse_lookup:
+        return reverse_lookup[expanded]
+
+    raise ValueError(f"Unknown team '{input_name}' not present in preprocessing classes.")
+
+
+def _display_team_name(name: str) -> str:
+    """Convert canonical/team-key name into readable title-case format."""
+    return str(name).replace("_", " ").strip().title()
+
+
+def _target_over(overs: float) -> int:
+    """Pick target-over bucket based on current overs."""
+    if overs < 6:
+        return 6
+    if overs < 10:
+        return 10
+    if overs < 15:
+        return 15
+    return 20
+
+
+def _winner_from_probability(
+    batting_team: str,
+    bowling_team: str,
+    batting_win_probability: float,
+) -> Dict[str, Any]:
+    """
+    Decide likely winner and percentage.
+
+    Rules:
+    - If prob < 0.5 -> bowling team likely winner, use 1 - prob
+    - If prob >= 0.5 -> batting team likely winner
+    """
+    batting_prob = min(max(float(batting_win_probability), 0.0), 1.0)
+    if batting_prob < 0.5:
+        winner = bowling_team
+        win_prob = 1.0 - batting_prob
+    else:
+        winner = batting_team
+        win_prob = batting_prob
+
+    win_pct_int = int(round(win_prob * 100))
+    return {
+        "predicted_winner": _display_team_name(winner),
+        "win_percentage": f"{win_pct_int}%",
+        "win_probability": win_prob,
+    }
+
+
+@lru_cache(maxsize=1)
+def _load_artifacts() -> Dict[str, Any]:
+    """Load models and preprocessing data once per process."""
+    for path in [WINNER_MODEL_PATH, SCORE_MODEL_PATH, PREPROCESSOR_PATH]:
+        if not path.exists():
+            raise FileNotFoundError(f"Missing required artifact: {path}")
+
+    winner_model = joblib.load(WINNER_MODEL_PATH)
+    score_model = joblib.load(SCORE_MODEL_PATH)
+    preprocessing = joblib.load(PREPROCESSOR_PATH)
+
+    batting_classes = preprocessing.get("batting_encoder_classes")
+    bowling_classes = preprocessing.get("bowling_encoder_classes")
+    winner_classes = preprocessing.get("winner_encoder_classes")
+    feature_cols = preprocessing.get("feature_cols")
+
+    if not batting_classes or not bowling_classes:
+        raise ValueError("preprocessing_objects.pkl is missing team encoder class lists.")
+
+    if not feature_cols:
+        # Fallback to the expected Colab training feature order.
+        feature_cols = [
+            "batting_team_enc",
+            "bowling_team_enc",
+            "runs",
+            "wickets",
+            "overs",
+            "balls_left",
+            "current_run_rate",
+        ]
+
+    return {
+        "winner_model": winner_model,
+        "score_model": score_model,
+        "feature_cols": feature_cols,
+        "batting_map": _build_class_mapping(batting_classes),
+        "bowling_map": _build_class_mapping(bowling_classes),
+        "winner_classes": [str(x) for x in winner_classes] if winner_classes else None,
+    }
+
+
+def predict_live(
+    batting_team: str,
+    bowling_team: str,
+    runs: int | float,
+    wickets: int | float,
+    overs: int | float,
+) -> Dict[str, Any]:
+    """
+    Predict live win probability and final score.
+
+    Steps:
+    1. Load models and preprocessing objects
+    2. Convert overs to balls bowled
+    3. Calculate balls_left and current_run_rate
+    4. Encode teams using saved classes
+    5. Build feature array
+    6. Predict winner probabilities and score
+    """
+    artifacts = _load_artifacts()
+    winner_model = artifacts["winner_model"]
+    score_model = artifacts["score_model"]
+
+    batting_raw = str(batting_team).strip()
+    bowling_raw = str(bowling_team).strip()
+    batting_name = _resolve_team_name(batting_raw, artifacts["batting_map"])
+    bowling_name = _resolve_team_name(bowling_raw, artifacts["bowling_map"])
+
+    runs_val = float(runs)
+    wickets_val = float(wickets)
+    overs_val = float(overs)
+
+    if runs_val < 0:
+        raise ValueError("runs must be non-negative")
+    if wickets_val < 0 or wickets_val > 10:
+        raise ValueError("wickets must be in range [0, 10]")
+
+    balls_bowled = _overs_to_balls(overs_val)
+    balls_left = max(120 - balls_bowled, 0)
+    current_run_rate = (runs_val * 6.0 / balls_bowled) if balls_bowled > 0 else 0.0
+
+    feature_values = {
+        "batting_team_enc": artifacts["batting_map"][batting_name],
+        "bowling_team_enc": artifacts["bowling_map"][bowling_name],
+        "runs": runs_val,
+        "wickets": wickets_val,
+        "overs": overs_val,
+        "balls_left": float(balls_left),
+        "current_run_rate": float(current_run_rate),
+    }
+
+    ordered = [feature_values[col] for col in artifacts["feature_cols"]]
+    x = np.array([ordered], dtype=float)
+
+    winner_proba = winner_model.predict_proba(x)[0]
+    predicted_score = float(score_model.predict(x)[0])
+
+    winner_classes = artifacts["winner_classes"]
+    if winner_classes and len(winner_classes) == len(winner_proba):
+        class_probabilities = {
+            winner_classes[idx]: float(prob) for idx, prob in enumerate(winner_proba)
+        }
+    else:
+        class_probabilities = {f"class_{idx}": float(prob) for idx, prob in enumerate(winner_proba)}
+
+    batting_win_probability = class_probabilities.get(batting_name)
+    if batting_win_probability is None:
+        # Fallback when winner classes do not map exactly to team strings.
+        bowling_probability = class_probabilities.get(bowling_name)
+        if bowling_probability is not None:
+            batting_win_probability = 1.0 - float(bowling_probability)
+        else:
+            batting_win_probability = float(max(winner_proba))
+
+    winner_summary = _winner_from_probability(
+        batting_team=batting_name,
+        bowling_team=bowling_name,
+        batting_win_probability=float(batting_win_probability),
+    )
+    target_over = _target_over(overs_val)
+    predicted_score_int = int(round(predicted_score))
+    max_class = max(class_probabilities, key=class_probabilities.get)
+
+    result = {
+        "predicted_winner": winner_summary["predicted_winner"],
+        "win_percentage": winner_summary["win_percentage"],
+        "predicted_score": predicted_score_int,
+        "target_over": target_over,
+        "inputs": {
+            "batting_team": _display_team_name(batting_name),
+            "bowling_team": _display_team_name(bowling_name),
+            "runs": runs_val,
+            "wickets": wickets_val,
+            "overs": overs_val,
+            "balls_bowled": balls_bowled,
+        },
+        "derived_features": {
+            "balls_left": balls_left,
+            "current_run_rate": current_run_rate,
+        },
+        "predictions": {
+            "predicted_score": predicted_score_int,
+            "winner_class_probabilities": class_probabilities,
+            "batting_team_win_probability": float(batting_win_probability),
+            "most_likely_winner": _display_team_name(max_class),
+            "predicted_winner": winner_summary["predicted_winner"],
+            "win_percentage": winner_summary["win_percentage"],
+            "target_over": target_over,
+        },
+    }
+    return result
+
+
+if __name__ == "__main__":
+    # Example usage for quick manual testing.
+    # Update team names to match classes in preprocessing_objects.pkl.
+    sample = predict_live(
+        batting_team="mumbai_indians",
+        bowling_team="chennai_super_kings",
+        runs=78,
+        wickets=2,
+        overs=9.4,
+    )
+    print(sample)
+    print(
+        f"Predicted Winner: {sample['predicted_winner']} ({sample['win_percentage']})"
+    )
+    print(
+        f"Predicted Score ({sample['target_over']} overs): {sample['predicted_score']}"
+    )
+----- END FILE: inference.py -----
+
+----- BEGIN FILE: launch_app.bat -----
+@echo off
+setlocal
+cd /d "%~dp0"
+
+if not exist "venv\Scripts\python.exe" (
+  echo [ERROR] venv not found at "%~dp0venv"
+  echo Create it first: python -m venv venv
+  pause
+  exit /b 1
+)
+
+echo Starting IPL app on http://127.0.0.1:8000 ...
+start "" "http://127.0.0.1:8000/"
+"%~dp0venv\Scripts\python.exe" -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+
+----- END FILE: launch_app.bat -----
+
+----- BEGIN FILE: live_prediction.py -----
+"""Reusable orchestration for scraping + live prediction."""
+
+from __future__ import annotations
+
+import time
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from inference import predict_live
+from scraper import CricinfoScrapeError, find_live_ipl_match_url, scrape_live_match
+
+
+def get_live_prediction(match_url: Optional[str] = None, timeout: int = 12) -> Dict[str, Any]:
+    """
+    Fetch live match data from Cricinfo and return model predictions.
+
+    Steps:
+    1. Fetch data using scraper
+    2. Pass data to predict_live
+    3. Return unified prediction payload
+    """
+    live_data = scrape_live_match(url=match_url, timeout=timeout)
+    if live_data is None:
+        return {"live_data": None, "prediction": None, "derived_features": {}}
+
+    prediction = predict_live(
+        batting_team=live_data["batting_team"],
+        bowling_team=live_data["bowling_team"],
+        runs=live_data["runs"],
+        wickets=live_data["wickets"],
+        overs=live_data["overs"],
+    )
+
+    return {
+        "live_data": live_data,
+        "prediction": prediction.get("predictions", prediction),
+        "derived_features": prediction.get("derived_features", {}),
+    }
+
+
+def _completed_overs(overs: float) -> int:
+    """Convert over notation (e.g., 10.2) to completed overs count."""
+    whole = int(overs)
+    balls = int(round((overs - whole) * 10))
+    return whole + (1 if balls >= 6 else 0)
+
+
+def _print_pretty_update(
+    batting: str,
+    bowling: str,
+    runs: int,
+    wickets: int,
+    overs: float,
+    match_status: str,
+    predicted_winner: Optional[str],
+    win_percentage: Optional[str],
+    predicted_score: Optional[float],
+    target_over: int,
+    is_extra: bool = False,
+    reason: Optional[str] = None,
+) -> None:
+    """Print clean, timestamped live prediction output."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    prefix = "[EXTRA UPDATE]" if is_extra else "[UPDATE]"
+
+    print(f"\n[{timestamp}] {prefix}")
+    if reason:
+        print(f"Reason: {reason}")
+    print(f"Match Status: {match_status}")
+    print(f"Match: {batting} vs {bowling}")
+    print(f"Score: {runs}/{wickets} ({overs})")
+
+    winner_label = predicted_winner or "N/A"
+    percent_label = win_percentage or "N/A"
+    score_label = int(round(float(predicted_score))) if predicted_score is not None else "N/A"
+
+    print(f"Predicted Winner: {winner_label} ({percent_label})")
+    print(f"Predicted Score ({target_over} overs): {score_label}")
+
+
+def run_live_prediction_loop(match_url: Optional[str] = None, interval_seconds: int = 30) -> None:
+    """
+    Poll live score every `interval_seconds`, run predictions, and print updates.
+
+    Extra updates are printed when:
+    - wickets increase
+    - over milestones are reached (6, 10, 15, 20)
+    """
+    no_match_interval_seconds = 60
+    match_interval_seconds = max(5, interval_seconds)
+    milestones = (6, 10, 15, 20)
+    triggered_milestones: set[int] = set()
+    previous_wickets: int | None = None
+    active_match_url = match_url
+
+    if active_match_url:
+        print(f"Starting live prediction loop for URL: {active_match_url}")
+    else:
+        print("Starting live prediction loop in AUTO mode.")
+    print(f"No-match retry interval: {no_match_interval_seconds}s")
+    print(f"Live update interval: {match_interval_seconds}s")
+
+    while True:
+        try:
+            # Auto-discover live IPL match URL when not pinned.
+            if active_match_url is None:
+                discovered = find_live_ipl_match_url(retries=3, retry_delay=10, timeout=12)
+                if not discovered:
+                    now = datetime.now().strftime("%H:%M:%S")
+                    print(f"[{now}] No live IPL match currently")
+                    time.sleep(no_match_interval_seconds)
+                    continue
+                active_match_url = discovered
+                triggered_milestones.clear()
+                previous_wickets = None
+
+            result = get_live_prediction(match_url=active_match_url)
+            if result.get("live_data") is None:
+                now = datetime.now().strftime("%H:%M:%S")
+                print(f"[{now}] Match finished or not live anymore. Waiting for next live IPL match.")
+                active_match_url = None if match_url is None else match_url
+                time.sleep(no_match_interval_seconds)
+                continue
+
+            live_data = result["live_data"]
+            pred = result["prediction"]
+            match_status = str(live_data.get("match_status", "live"))
+            if match_status != "live":
+                now = datetime.now().strftime("%H:%M:%S")
+                print(f"[{now}] Match status: {match_status}. Stopping current match tracking.")
+                active_match_url = None if match_url is None else match_url
+                time.sleep(no_match_interval_seconds)
+                continue
+
+            batting = live_data.get("batting_team", "Unknown")
+            bowling = live_data.get("bowling_team", "Unknown")
+            runs = live_data.get("runs", 0)
+            wickets = int(live_data.get("wickets", 0))
+            overs = float(live_data.get("overs", 0.0))
+            completed = _completed_overs(overs)
+
+            win_prob = pred.get("batting_team_win_probability")
+            score = pred.get("predicted_score")
+            predicted_winner = pred.get("predicted_winner")
+            win_percentage = pred.get("win_percentage")
+            target_over = int(pred.get("target_over", 20))
+
+            # Backward-compatible fallback if old prediction format is loaded.
+            if predicted_winner is None:
+                predicted_winner = batting if (win_prob is not None and float(win_prob) >= 0.5) else bowling
+            if win_percentage is None and win_prob is not None:
+                p = float(win_prob)
+                win_percentage = f"{int(round((p if p >= 0.5 else 1 - p) * 100))}%"
+
+            _print_pretty_update(
+                batting=batting,
+                bowling=bowling,
+                runs=int(runs),
+                wickets=wickets,
+                overs=overs,
+                match_status=match_status,
+                predicted_winner=predicted_winner,
+                win_percentage=win_percentage,
+                predicted_score=score,
+                target_over=target_over,
+            )
+
+            # Extra update on wicket.
+            if previous_wickets is not None and wickets > previous_wickets:
+                _print_pretty_update(
+                    batting=batting,
+                    bowling=bowling,
+                    runs=int(runs),
+                    wickets=wickets,
+                    overs=overs,
+                    match_status=match_status,
+                    predicted_winner=predicted_winner,
+                    win_percentage=win_percentage,
+                    predicted_score=score,
+                    target_over=target_over,
+                    is_extra=True,
+                    reason="Wicket detected",
+                )
+
+            # Extra updates on over milestones.
+            for milestone in milestones:
+                if completed >= milestone and milestone not in triggered_milestones:
+                    triggered_milestones.add(milestone)
+                    _print_pretty_update(
+                        batting=batting,
+                        bowling=bowling,
+                        runs=int(runs),
+                        wickets=wickets,
+                        overs=overs,
+                        match_status=match_status,
+                        predicted_winner=predicted_winner,
+                        win_percentage=win_percentage,
+                        predicted_score=score,
+                        target_over=target_over,
+                        is_extra=True,
+                        reason=f"Over milestone reached: {milestone}",
+                    )
+
+            previous_wickets = wickets
+        except CricinfoScrapeError as exc:
+            # No live match or temporary fetch issue: keep polling quietly.
+            now = datetime.now().strftime("%H:%M:%S")
+            print(f"[{now}] [INFO] {exc}")
+            active_match_url = None if match_url is None else match_url
+            time.sleep(no_match_interval_seconds)
+            continue
+        except Exception as exc:  # pylint: disable=broad-except
+            now = datetime.now().strftime("%H:%M:%S")
+            print(f"[{now}] [ERROR] Loop iteration failed: {exc}")
+            time.sleep(no_match_interval_seconds)
+            continue
+
+        time.sleep(match_interval_seconds)
+
+
+if __name__ == "__main__":
+    import sys
+
+    url = sys.argv[1] if len(sys.argv) > 1 else None
+    interval = int(sys.argv[2]) if len(sys.argv) > 2 else 30
+    try:
+        run_live_prediction_loop(match_url=url, interval_seconds=interval)
+    except KeyboardInterrupt:
+        print("\nStopped by user.")
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"Live prediction failed: {exc}")
+        raise SystemExit(2)
+----- END FILE: live_prediction.py -----
+
+----- BEGIN FILE: requirements.txt -----
+pandas
+numpy
+scikit-learn
+xgboost
+fastapi
+uvicorn
+requests
+beautifulsoup4
+joblib
+
+----- END FILE: requirements.txt -----
+
+----- BEGIN FILE: retrain.py -----
+"""Optional safe retraining script for winner and score models."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+
+from backend.app.services.prediction_service import PredictionService
+from backend.app.utils.features import build_prematch_features
+
+
+def _load_csv_if_exists(path: Path) -> Optional[pd.DataFrame]:
+    if path.exists():
+        return pd.read_csv(path, low_memory=False)
+    return None
+
+
+def retrain_models(
+    training_data_path: Path | str = "data/training_data.csv",
+    simulation_results_path: Path | str = "data/processed/simulation_results.csv",
+    winner_training_path: Path | str = "data/processed/winner_training.csv",
+) -> None:
+    """
+    Retrain models using available datasets.
+
+    Safe behavior:
+    - Retrains only when required datasets are present.
+    - Skips missing components gracefully.
+    """
+    model_service = PredictionService()
+
+    # Winner model retrain.
+    winner_df = _load_csv_if_exists(Path(winner_training_path))
+    if winner_df is not None and "team1_won" in winner_df.columns:
+        winner_features = build_prematch_features(winner_df) if "team1" in winner_df.columns else winner_df
+        model_service.train_winner_model(winner_features, target_col="team1_won")
+        print("Winner model retrained.")
+    else:
+        print("Winner model retrain skipped (winner training data unavailable).")
+
+    # Score model retrain: use training_data + append simulation checkpoints as extra rows.
+    training_df = _load_csv_if_exists(Path(training_data_path))
+    sim_df = _load_csv_if_exists(Path(simulation_results_path))
+    if training_df is None:
+        print("Score model retrain skipped (training_data.csv unavailable).")
+        return
+
+    # Build score target from per-ball data: final innings score.
+    score_base = training_df.copy()
+    score_base["match_id"] = pd.to_numeric(score_base["match_id"], errors="coerce")
+    score_base["inning"] = pd.to_numeric(score_base["inning"], errors="coerce")
+    score_base["runs"] = pd.to_numeric(score_base["runs"], errors="coerce").fillna(0)
+    score_base["wickets"] = pd.to_numeric(score_base["wickets"], errors="coerce").fillna(0)
+    score_base["over"] = pd.to_numeric(score_base["over"], errors="coerce").fillna(0)
+    score_base["ball"] = pd.to_numeric(score_base["ball"], errors="coerce").fillna(0)
+
+    score_base["balls_bowled"] = (score_base["over"].astype(int) * 6 + score_base["ball"].astype(int)).clip(lower=0)
+    score_base["overs"] = score_base["balls_bowled"].apply(lambda b: round((b // 6) + (b % 6) / 10, 1))
+    score_base["balls_left"] = (120 - score_base["balls_bowled"]).clip(lower=0)
+
+    score_base = score_base.sort_values(["match_id", "inning", "over", "ball"]).reset_index(drop=True)
+    score_base["runs_so_far"] = score_base.groupby(["match_id", "inning"])["runs"].cumsum()
+    score_base["current_run_rate"] = score_base.apply(
+        lambda r: (r["runs_so_far"] * 6 / r["balls_bowled"]) if r["balls_bowled"] > 0 else 0.0,
+        axis=1,
+    )
+    final_scores = (
+        score_base.groupby(["match_id", "inning"], as_index=False)["runs"]
+        .sum()
+        .rename(columns={"runs": "target_final_score"})
+    )
+    score_base = score_base.merge(final_scores, on=["match_id", "inning"], how="left")
+
+    score_dataset = pd.DataFrame(
+        {
+            "match_id": score_base["match_id"],
+            "inning": score_base["inning"],
+            "batting_team_id": pd.Categorical(score_base["batting_team"]).codes,
+            "bowling_team_id": pd.Categorical(score_base["bowling_team"]).codes,
+            "runs": score_base["runs_so_far"],
+            "wickets": score_base["wickets"],
+            "overs": score_base["overs"],
+            "balls_left": score_base["balls_left"],
+            "current_run_rate": score_base["current_run_rate"],
+            "required_run_rate": 0.0,
+            "target": 0.0,
+            "target_final_score": score_base["target_final_score"],
+        }
+    )
+
+    if sim_df is not None and {"runs", "wickets", "overs", "actual_score"}.issubset(sim_df.columns):
+        sim_aug = pd.DataFrame(
+            {
+                "match_id": pd.to_numeric(sim_df.get("match_id"), errors="coerce"),
+                "inning": pd.to_numeric(sim_df.get("inning"), errors="coerce"),
+                "batting_team_id": pd.Categorical(sim_df.get("batting_team")).codes,
+                "bowling_team_id": pd.Categorical(sim_df.get("bowling_team")).codes,
+                "runs": pd.to_numeric(sim_df.get("runs"), errors="coerce"),
+                "wickets": pd.to_numeric(sim_df.get("wickets"), errors="coerce"),
+                "overs": pd.to_numeric(sim_df.get("overs"), errors="coerce"),
+                "balls_left": 0.0,
+                "current_run_rate": 0.0,
+                "required_run_rate": 0.0,
+                "target": 0.0,
+                "target_final_score": pd.to_numeric(sim_df.get("actual_score"), errors="coerce"),
+            }
+        ).dropna()
+        score_dataset = pd.concat([score_dataset, sim_aug], ignore_index=True)
+
+    score_dataset = score_dataset.dropna()
+    model_service.train_score_model(score_dataset, target_col="target_final_score")
+    print("Score model retrained.")
+
+
+if __name__ == "__main__":
+    retrain_models()
+
+----- END FILE: retrain.py -----
+
+----- BEGIN FILE: scraper.py -----
+"""Robust ESPN Cricinfo scraper with automatic IPL live-match detection."""
+
+from __future__ import annotations
+
+import re
+import time
+from typing import Any, Dict, Iterable, Optional
+from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
+
+
+LIVE_PAGE_URL = "https://www.espncricinfo.com/live-cricket-score"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json,text/html,*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.espncricinfo.com/",
+}
+
+
+class CricinfoScrapeError(Exception):
+    """Raised when Cricinfo data cannot be fetched or parsed."""
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_status(status: str) -> str:
+    """Normalize match status to one of live/in progress/completed/upcoming/unknown."""
+    text = str(status).strip().lower()
+    if any(token in text for token in ["live", "in progress", "in_play", "innings break"]):
+        return "live"
+    if any(token in text for token in ["result", "completed", "won by", "match over", "stumps"]):
+        return "completed"
+    if any(token in text for token in ["scheduled", "starts", "upcoming", "yet to begin"]):
+        return "upcoming"
+    return "unknown"
+
+
+def _extract_score_parts(score_text: str) -> Dict[str, float]:
+    """Extract runs/wickets/overs from score strings like '150/3 (16.4)'."""
+    if not score_text:
+        return {"runs": 0, "wickets": 0, "overs": 0.0}
+
+    score_match = re.search(
+        r"(?P<runs>\d{1,3})\s*/\s*(?P<wk>\d{1,2})(?:\s*\(\s*(?P<ov>\d{1,2}(?:\.\d)?)\s*\))?",
+        score_text,
+    )
+    if not score_match:
+        return {"runs": 0, "wickets": 0, "overs": 0.0}
+
+    return {
+        "runs": _safe_int(score_match.group("runs"), 0),
+        "wickets": _safe_int(score_match.group("wk"), 0),
+        "overs": _safe_float(score_match.group("ov"), 0.0),
+    }
+
+
+def _iter_competitions(payload: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+    """Yield competition-like objects from common Cricinfo payload variants."""
+    events = payload.get("events") or payload.get("matches") or []
+    for event in events:
+        competitions = event.get("competitions")
+        if competitions:
+            for competition in competitions:
+                yield competition
+        else:
+            yield event
+
+
+def _extract_url_from_competition(comp: Dict[str, Any]) -> Optional[str]:
+    """Extract possible match URL from competition payload."""
+    candidate = (
+        comp.get("url")
+        or comp.get("href")
+        or comp.get("matchUrl")
+        or (comp.get("links", {}) if isinstance(comp.get("links"), dict) else {}).get("web")
+    )
+    if not candidate:
+        return None
+    return urljoin("https://www.espncricinfo.com", str(candidate))
+
+
+def _is_ipl_blob(text: str) -> bool:
+    lower = text.lower()
+    return "ipl" in lower or "indian premier league" in lower
+
+
+def _detect_live_match_from_page(timeout: int) -> Optional[str]:
+    """
+    Scan Cricinfo live page and return live IPL match URL.
+
+    Detection criteria:
+    - Must be IPL match
+    - Must be live/in progress
+    """
+    response = requests.get(LIVE_PAGE_URL, headers=HEADERS, timeout=timeout)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Try structured JSON first from embedded scripts.
+    for script in soup.find_all("script"):
+        text = script.get_text(" ", strip=False) if script else ""
+        if not text or not _is_ipl_blob(text):
+            continue
+
+        status_match = re.search(r'"status(?:Text)?"\s*:\s*"([^"]+)"', text, flags=re.IGNORECASE)
+        # Require explicit status and require it to be live/in progress.
+        if not status_match:
+            continue
+        if _normalize_status(status_match.group(1)) != "live":
+            continue
+
+        href_match = re.search(r'"(?:url|href|matchUrl)"\s*:\s*"([^"]+)"', text, flags=re.IGNORECASE)
+        if href_match:
+            candidate = urljoin("https://www.espncricinfo.com", href_match.group(1))
+            if "espncricinfo.com" in candidate:
+                return candidate
+
+    # Fallback to card/link scan.
+    for anchor in soup.select("a[href]"):
+        href = str(anchor.get("href") or "")
+        card_text = " ".join(anchor.stripped_strings).lower()
+        if not href:
+            continue
+        if not _is_ipl_blob(card_text + " " + href):
+            continue
+        if "live-cricket-score" not in href and "full-scorecard" not in href:
+            continue
+        if re.search(r"\blive\b|\bin progress\b", card_text):
+            return urljoin("https://www.espncricinfo.com", href)
+    return None
+
+
+def _parse_match_page(url: str, timeout: int) -> Optional[Dict[str, Any]]:
+    """
+    Parse match page and return structured live data.
+
+    Returns None when page indicates match is not currently live.
+    """
+    response = requests.get(url, headers=HEADERS, timeout=timeout)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+    page_text = soup.get_text(" ", strip=True)
+
+    status_match = re.search(
+        r"(live|in progress|innings break|result|won by|completed|match over|scheduled|yet to begin)",
+        page_text,
+        flags=re.IGNORECASE,
+    )
+    status = _normalize_status(status_match.group(1) if status_match else "unknown")
+    if status != "live":
+        return None
+
+    score_match = re.search(
+        r"(?P<team>[A-Za-z][A-Za-z\s]{2,60})\s+(?P<runs>\d{1,3})\s*/\s*(?P<wk>\d{1,2})\s*\((?P<ov>\d{1,2}(?:\.\d)?)\)",
+        page_text,
+    )
+    if not score_match:
+        # Alternate looser parse.
+        simple_score = re.search(r"(?P<runs>\d{1,3})\s*/\s*(?P<wk>\d{1,2})\s*\((?P<ov>\d{1,2}(?:\.\d)?)\)", page_text)
+        if not simple_score:
+            # Treat as not-live/unsupported page to avoid false-positive errors.
+            return None
+        batting_team = "Unknown"
+        runs = _safe_int(simple_score.group("runs"), 0)
+        wickets = _safe_int(simple_score.group("wk"), 0)
+        overs = _safe_float(simple_score.group("ov"), 0.0)
+    else:
+        batting_team = score_match.group("team").strip()
+        runs = _safe_int(score_match.group("runs"), 0)
+        wickets = _safe_int(score_match.group("wk"), 0)
+        overs = _safe_float(score_match.group("ov"), 0.0)
+
+    teams = re.findall(r"([A-Za-z][A-Za-z\s]{2,60})\s+\d{1,3}\s*/\s*\d{1,2}", page_text)
+    bowling_team = teams[1].strip() if len(teams) > 1 else "Unknown"
+
+    return {
+        "match_url": url,
+        "match_status": "live",
+        "batting_team": batting_team or "Unknown",
+        "bowling_team": bowling_team or "Unknown",
+        "runs": runs,
+        "wickets": max(0, min(10, wickets)),
+        "overs": max(0.0, overs),
+    }
+
+
+def find_live_ipl_match_url(retries: int = 3, retry_delay: int = 20, timeout: int = 12) -> Optional[str]:
+    """Retry-aware live IPL match URL detector. Returns None when not found."""
+    attempts = max(1, retries)
+    for attempt in range(1, attempts + 1):
+        try:
+            match_url = _detect_live_match_from_page(timeout=timeout)
+            if match_url:
+                return match_url
+        except requests.RequestException:
+            pass
+
+        if attempt < attempts:
+            time.sleep(max(1, retry_delay))
+    return None
+
+
+def scrape_live_match(
+    url: Optional[str] = None,
+    timeout: int = 12,
+    retries: int = 3,
+    retry_delay: int = 20,
+) -> Optional[Dict[str, Any]]:
+    """
+    Fetch live IPL match data.
+
+    Behavior:
+    - If URL is provided: parse that match page and return live data or None if not live.
+    - If URL is not provided: auto-detect live IPL URL with retry and then parse.
+    - Returns None when no live IPL match is available.
+    """
+    try:
+        target_url = url or find_live_ipl_match_url(
+            retries=retries,
+            retry_delay=retry_delay,
+            timeout=timeout,
+        )
+        if not target_url:
+            return None
+
+        parsed = _parse_match_page(target_url, timeout=timeout)
+        if not parsed:
+            return None
+
+        # No None values in primary fields.
+        return {
+            "match_url": str(parsed.get("match_url", target_url)),
+            "match_status": str(parsed.get("match_status", "live")),
+            "batting_team": str(parsed.get("batting_team", "Unknown")) or "Unknown",
+            "bowling_team": str(parsed.get("bowling_team", "Unknown")) or "Unknown",
+            "runs": _safe_int(parsed.get("runs"), 0),
+            "wickets": max(0, min(10, _safe_int(parsed.get("wickets"), 0))),
+            "overs": max(0.0, _safe_float(parsed.get("overs"), 0.0)),
+        }
+    except requests.Timeout as exc:
+        raise CricinfoScrapeError("Request timed out while fetching Cricinfo data.") from exc
+    except requests.RequestException as exc:
+        raise CricinfoScrapeError(f"Failed to fetch Cricinfo data: {exc}") from exc
+
+
+def get_live_match_data(
+    url: Optional[str] = None,
+    timeout: int = 12,
+    retries: int = 3,
+    retry_delay: int = 20,
+) -> Optional[Dict[str, Any]]:
+    """Convenience wrapper for API layer naming clarity."""
+    return scrape_live_match(
+        url=url,
+        timeout=timeout,
+        retries=retries,
+        retry_delay=retry_delay,
+    )
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+
+    try:
+        output = scrape_live_match(url=sys.argv[1] if len(sys.argv) > 1 else None)
+        print(json.dumps(output, indent=2))
+    except Exception as error:  # pylint: disable=broad-except
+        print(f"Scrape failed: {error}")
+        raise SystemExit(2)
+----- END FILE: scraper.py -----
+
+----- BEGIN FILE: scripts\download_data.py -----
+"""Download data placeholder script.
+
+In production, connect this script to a reliable IPL data source.
+"""
+
+from pathlib import Path
+
+from backend.app.utils.helpers import ensure_dir
+
+
+def download_datasets() -> None:
+    """Create raw data directory and print expected file locations."""
+    raw_dir = Path("data/raw")
+    ensure_dir(raw_dir)
+    print("Place datasets at:")
+    print(f"- {raw_dir / 'matches.csv'}")
+    print(f"- {raw_dir / 'deliveries.csv'}")
+
+
+if __name__ == "__main__":
+    download_datasets()
+
+----- END FILE: scripts\download_data.py -----
+
+----- BEGIN FILE: scripts\predict_live.py -----
+"""Run a sample live prediction from command line."""
+
+from backend.app.services.live_service import LiveService
+
+
+def live_prediction() -> None:
+    """Demo live prediction with placeholder match state."""
+    service = LiveService()
+    sample_state = {
+        "current_runs": 78.0,
+        "wickets": 2.0,
+        "overs": 9.4,
+        "target": 182.0,
+    }
+    result = service.live_prediction(sample_state)
+    print("Live prediction result:", result)
+
+
+if __name__ == "__main__":
+    live_prediction()
+
+----- END FILE: scripts\predict_live.py -----
+
+----- BEGIN FILE: scripts\preprocess_data.py -----
+"""Run complete IPL preprocessing and feature engineering pipeline."""
+
+from pathlib import Path
+
+from backend.app.utils.features import (
+    build_ball_by_ball_features,
+    build_score_training_dataset,
+    build_winner_training_dataset,
+)
+from backend.app.utils.helpers import ensure_dir, save_csv
+from backend.app.utils.preprocessing import (
+    load_datasets,
+    preprocess_deliveries,
+    preprocess_matches,
+)
+
+
+def run_preprocessing() -> None:
+    """
+    Execute end-to-end data pipeline.
+
+    Inputs:
+    - data/raw/matches.csv
+    - data/raw/deliveries.csv
+
+    Outputs in data/processed:
+    - matches_clean.csv
+    - deliveries_clean.csv
+    - ball_by_ball_features.csv
+    - live_features.csv
+    - winner_training.csv
+    - score_training.csv
+    """
+    raw_dir = Path("data/raw")
+    processed_dir = Path("data/processed")
+    ensure_dir(processed_dir)
+
+    matches_path = raw_dir / "matches.csv"
+    deliveries_path = raw_dir / "deliveries.csv"
+
+    matches_raw, deliveries_raw = load_datasets(matches_path, deliveries_path)
+
+    # Step 1-3: clean missing values and normalize team names.
+    matches_clean = preprocess_matches(matches_raw)
+    deliveries_clean = preprocess_deliveries(deliveries_raw)
+
+    # Step 4-5: build match-level and ball-by-ball + live-state features.
+    ball_features = build_ball_by_ball_features(deliveries_clean, matches_clean)
+    live_feature_cols = [
+        "match_id",
+        "inning",
+        "batting_team",
+        "bowling_team",
+        "runs",
+        "wickets",
+        "overs",
+        "balls_left",
+        "current_run_rate",
+        "required_run_rate",
+        "target",
+        "target_final_score",
+    ]
+    available_live_cols = [col for col in live_feature_cols if col in ball_features.columns]
+    live_features = ball_features[available_live_cols].copy()
+
+    # Step 7: prepare model training datasets.
+    winner_training = build_winner_training_dataset(matches_clean)
+    score_training = build_score_training_dataset(ball_features)
+
+    # Step 6: save all artifacts to data/processed.
+    save_csv(matches_clean, processed_dir / "matches_clean.csv")
+    save_csv(deliveries_clean, processed_dir / "deliveries_clean.csv")
+    save_csv(ball_features, processed_dir / "ball_by_ball_features.csv")
+    save_csv(live_features, processed_dir / "live_features.csv")
+    save_csv(winner_training, processed_dir / "winner_training.csv")
+    save_csv(score_training, processed_dir / "score_training.csv")
+
+    print("Preprocessing pipeline complete.")
+    print(f"Processed files saved to: {processed_dir.resolve()}")
+
+
+if __name__ == "__main__":
+    run_preprocessing()
+----- END FILE: scripts\preprocess_data.py -----
+
+----- BEGIN FILE: scripts\test_pipeline.py -----
+"""Basic pipeline smoke test script."""
+
+from pathlib import Path
+
+
+def test_paths() -> None:
+    """Verify required directories and placeholder data paths."""
+    expected = [
+        Path("data/raw/matches.csv"),
+        Path("data/raw/deliveries.csv"),
+        Path("backend/app/main.py"),
+        Path("scripts/train_winner_model.py"),
+    ]
+    for path in expected:
+        print(f"{path}: {'FOUND' if path.exists() else 'MISSING'}")
+
+
+if __name__ == "__main__":
+    test_paths()
+
+----- END FILE: scripts\test_pipeline.py -----
+
+----- BEGIN FILE: scripts\train_score_model.py -----
+"""Train live score model (XGBoostRegressor) from processed dataset."""
+
+import argparse
+from pathlib import Path
+from typing import Dict, Tuple
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+
+
+def _encode_features(
+    df: pd.DataFrame,
+    target_col: str,
+) -> Tuple[pd.DataFrame, pd.Series, Dict[str, Dict[str, int]]]:
+    """Encode features into numeric matrix and return X, y, encoder mappings."""
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in dataframe.")
+
+    data = df.copy()
+    y = pd.to_numeric(data[target_col], errors="coerce")
+    data = data.drop(columns=[target_col])
+
+    encoder_maps: Dict[str, Dict[str, int]] = {}
+    categorical_cols = data.select_dtypes(include=["object"]).columns.tolist()
+
+    for col in categorical_cols:
+        series = data[col].fillna("unknown").astype(str)
+        categories = sorted(series.unique().tolist())
+        mapping = {value: idx for idx, value in enumerate(categories)}
+        encoder_maps[col] = mapping
+        data[col] = series.map(mapping).astype(int)
+
+    for col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+        median = data[col].median()
+        data[col] = data[col].fillna(0.0 if np.isnan(median) else median)
+
+    valid_mask = y.notna()
+    x = data.loc[valid_mask].reset_index(drop=True)
+    y = y.loc[valid_mask].astype(float).reset_index(drop=True)
+    return x, y, encoder_maps
+
+
+def train_score_model(
+    input_path: Path,
+    model_path: Path,
+    preprocessor_path: Path,
+    target_col: str,
+    test_size: float,
+    random_state: int,
+) -> None:
+    """Train, evaluate, and save score regressor + preprocessing metadata."""
+    if not input_path.exists():
+        raise FileNotFoundError(
+            f"Processed dataset not found at {input_path}. Run scripts/preprocess_data.py first."
+        )
+
+    df = pd.read_csv(input_path, low_memory=False)
+    x, y, encoder_maps = _encode_features(df=df, target_col=target_col)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+    )
+
+    model = XGBRegressor(
+        n_estimators=400,
+        max_depth=7,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        objective="reg:squarederror",
+        tree_method="hist",  # CPU-friendly
+        n_jobs=-1,
+        random_state=random_state,
+    )
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+    rmse = mean_squared_error(y_test, y_pred, squared=False)
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+
+    print("Score Model Evaluation")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE: {mae:.4f}")
+    print(f"R2 Score: {r2:.4f}")
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, model_path)
+    joblib.dump(
+        {
+            "target_col": target_col,
+            "feature_cols": x.columns.tolist(),
+            "categorical_encoders": encoder_maps,
+        },
+        preprocessor_path,
+    )
+    print(f"Saved score model to: {model_path}")
+    print(f"Saved score preprocessing metadata to: {preprocessor_path}")
+
+
+def _parse_args() -> argparse.Namespace:
+    """Build CLI parser."""
+    parser = argparse.ArgumentParser(description="Train IPL score prediction model.")
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("data/processed/score_training.csv"),
+        help="Path to score training dataset.",
+    )
+    parser.add_argument(
+        "--target-col",
+        type=str,
+        default="target_final_score",
+        help="Target column for score regression.",
+    )
+    parser.add_argument(
+        "--test-size",
+        type=float,
+        default=0.2,
+        help="Test split ratio (0-1).",
+    )
+    parser.add_argument(
+        "--random-state",
+        type=int,
+        default=42,
+        help="Random seed.",
+    )
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=Path("models/score_model.joblib"),
+        help="Output path for trained model artifact.",
+    )
+    parser.add_argument(
+        "--preprocessor-path",
+        type=Path,
+        default=Path("models/score_preprocessor.joblib"),
+        help="Output path for preprocessing metadata artifact.",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = _parse_args()
+    train_score_model(
+        input_path=args.input,
+        model_path=args.model_path,
+        preprocessor_path=args.preprocessor_path,
+        target_col=args.target_col,
+        test_size=args.test_size,
+        random_state=args.random_state,
+    )
+----- END FILE: scripts\train_score_model.py -----
+
+----- BEGIN FILE: scripts\train_winner_model.py -----
+"""Train pre-match winner model (XGBoostClassifier) from processed dataset."""
+
+import argparse
+from pathlib import Path
+from typing import Dict, Tuple
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, classification_report, f1_score, roc_auc_score
+from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
+
+
+def _encode_features(
+    df: pd.DataFrame,
+    target_col: str,
+) -> Tuple[pd.DataFrame, pd.Series, Dict[str, Dict[str, int]]]:
+    """Encode categorical columns to numeric ids and return X, y, encoder maps."""
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in dataframe.")
+
+    data = df.copy()
+    y = pd.to_numeric(data[target_col], errors="coerce")
+    data = data.drop(columns=[target_col])
+
+    encoder_maps: Dict[str, Dict[str, int]] = {}
+    categorical_cols = data.select_dtypes(include=["object"]).columns.tolist()
+
+    for col in categorical_cols:
+        series = data[col].fillna("unknown").astype(str)
+        categories = sorted(series.unique().tolist())
+        mapping = {value: idx for idx, value in enumerate(categories)}
+        encoder_maps[col] = mapping
+        data[col] = series.map(mapping).astype(int)
+
+    for col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+        median = data[col].median()
+        data[col] = data[col].fillna(0.0 if np.isnan(median) else median)
+
+    valid_mask = y.notna()
+    x = data.loc[valid_mask].reset_index(drop=True)
+    y = y.loc[valid_mask].astype(int).reset_index(drop=True)
+    return x, y, encoder_maps
+
+
+def train_winner_model(
+    input_path: Path,
+    model_path: Path,
+    preprocessor_path: Path,
+    target_col: str,
+    test_size: float,
+    random_state: int,
+) -> None:
+    """Train, evaluate, and save winner classifier + preprocessing metadata."""
+    if not input_path.exists():
+        raise FileNotFoundError(
+            f"Processed dataset not found at {input_path}. Run scripts/preprocess_data.py first."
+        )
+
+    df = pd.read_csv(input_path, low_memory=False)
+    x, y, encoder_maps = _encode_features(df=df, target_col=target_col)
+
+    if y.nunique() < 2:
+        raise ValueError("Winner target must contain at least two classes.")
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    model = XGBClassifier(
+        n_estimators=300,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        objective="binary:logistic",
+        eval_metric="logloss",
+        tree_method="hist",  # CPU-friendly
+        n_jobs=-1,
+        random_state=random_state,
+    )
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+    y_prob = model.predict_proba(x_test)[:, 1]
+
+    print("Winner Model Evaluation")
+    print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+    print(f"F1 Score: {f1_score(y_test, y_pred):.4f}")
+    print(f"ROC-AUC: {roc_auc_score(y_test, y_prob):.4f}")
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred, digits=4))
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, model_path)
+    joblib.dump(
+        {
+            "target_col": target_col,
+            "feature_cols": x.columns.tolist(),
+            "categorical_encoders": encoder_maps,
+        },
+        preprocessor_path,
+    )
+    print(f"Saved winner model to: {model_path}")
+    print(f"Saved winner preprocessing metadata to: {preprocessor_path}")
+
+
+def _parse_args() -> argparse.Namespace:
+    """Build CLI parser."""
+    parser = argparse.ArgumentParser(description="Train IPL winner prediction model.")
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("data/processed/winner_training.csv"),
+        help="Path to winner training dataset.",
+    )
+    parser.add_argument(
+        "--target-col",
+        type=str,
+        default="team1_won",
+        help="Target column for winner classification.",
+    )
+    parser.add_argument(
+        "--test-size",
+        type=float,
+        default=0.2,
+        help="Test split ratio (0-1).",
+    )
+    parser.add_argument(
+        "--random-state",
+        type=int,
+        default=42,
+        help="Random seed.",
+    )
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=Path("models/winner_model.joblib"),
+        help="Output path for trained model artifact.",
+    )
+    parser.add_argument(
+        "--preprocessor-path",
+        type=Path,
+        default=Path("models/winner_preprocessor.joblib"),
+        help="Output path for preprocessing metadata artifact.",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = _parse_args()
+    train_winner_model(
+        input_path=args.input,
+        model_path=args.model_path,
+        preprocessor_path=args.preprocessor_path,
+        target_col=args.target_col,
+        test_size=args.test_size,
+        random_state=args.random_state,
+    )
+----- END FILE: scripts\train_winner_model.py -----
+
+----- BEGIN FILE: simulation_engine.py -----
+"""Simulation engine for innings checkpoint predictions."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Dict, List
+
+import pandas as pd
+
+from inference import predict_live
+
+
+MILESTONE_OVERS = (6, 10, 15, 20)
+
+
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = [str(c).strip().lower().replace(" ", "_") for c in out.columns]
+    return out
+
+
+def _balls_from_over_ball(over: float, ball: float) -> int:
+    """Convert over/ball columns to total legal-ball position approximation."""
+    try:
+        return max(int(over) * 6 + int(ball), 0)
+    except Exception:
+        return 0
+
+
+def _prepare_deliveries(deliveries_path: Path) -> pd.DataFrame:
+    if not deliveries_path.exists():
+        raise FileNotFoundError(f"Missing deliveries file: {deliveries_path}")
+
+    df = pd.read_csv(deliveries_path, low_memory=False)
+    df = _normalize_columns(df)
+
+    if "id" in df.columns and "match_id" not in df.columns:
+        df = df.rename(columns={"id": "match_id"})
+    if "innings" in df.columns and "inning" not in df.columns:
+        df = df.rename(columns={"innings": "inning"})
+
+    required = ["match_id", "inning", "batting_team", "bowling_team", "total_runs", "over", "ball"]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"deliveries.csv missing required columns: {missing}")
+
+    for col in ["match_id", "inning", "total_runs", "over", "ball", "is_wicket"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    if "is_wicket" not in df.columns:
+        df["is_wicket"] = 0
+
+    df = df.sort_values(["match_id", "inning", "over", "ball"]).reset_index(drop=True)
+    df["runs_so_far"] = df.groupby(["match_id", "inning"])["total_runs"].cumsum()
+    df["wickets_so_far"] = df.groupby(["match_id", "inning"])["is_wicket"].cumsum().clip(upper=10)
+    df["ball_position"] = df.apply(lambda r: _balls_from_over_ball(r["over"], r["ball"]), axis=1)
+    df["overs_float"] = df["ball_position"].apply(lambda balls: round((balls // 6) + (balls % 6) / 10, 1))
+    return df
+
+
+def _simulate_innings_predictions(innings_df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """Generate predictions at 6/10/15/20 overs for one innings."""
+    output: List[Dict[str, Any]] = []
+    final_score = int(innings_df["total_runs"].sum())
+
+    match_id = int(innings_df["match_id"].iloc[0])
+    inning = int(innings_df["inning"].iloc[0])
+    batting_team = str(innings_df["batting_team"].iloc[0])
+    bowling_team = str(innings_df["bowling_team"].iloc[0])
+
+    for over_num in MILESTONE_OVERS:
+        threshold_ball = over_num * 6
+        upto = innings_df[innings_df["ball_position"] <= threshold_ball]
+        if upto.empty:
+            continue
+
+        latest = upto.iloc[-1]
+        runs = int(latest["runs_so_far"])
+        wickets = int(latest["wickets_so_far"])
+        overs = float(latest["overs_float"])
+
+        predicted_score = None
+        predicted_winner = None
+        win_percentage = None
+        target_over = over_num
+
+        try:
+            pred = predict_live(
+                batting_team=batting_team,
+                bowling_team=bowling_team,
+                runs=runs,
+                wickets=wickets,
+                overs=overs,
+            )
+            predicted_score = int(pred.get("predicted_score", 0))
+            predicted_winner = pred.get("predicted_winner")
+            win_percentage = pred.get("win_percentage")
+            target_over = int(pred.get("target_over", over_num))
+        except Exception:
+            # Keep simulation robust even if a single prediction fails.
+            pass
+
+        output.append(
+            {
+                "match_id": match_id,
+                "inning": inning,
+                "over_number": over_num,
+                "batting_team": batting_team,
+                "bowling_team": bowling_team,
+                "runs": runs,
+                "wickets": wickets,
+                "overs": overs,
+                "predicted_score": predicted_score,
+                "actual_score": final_score,
+                "predicted_winner": predicted_winner,
+                "win_percentage": win_percentage,
+                "target_over": target_over,
+            }
+        )
+
+    return output
+
+
+def run_simulation(
+    deliveries_path: Path | str = "data/raw/deliveries.csv",
+    save_path: Path | str = "data/processed/simulation_results.csv",
+) -> List[Dict[str, Any]]:
+    """
+    Run checkpoint simulation for both innings of each match.
+
+    Returns a list of prediction rows.
+    """
+    deliveries = _prepare_deliveries(Path(deliveries_path))
+
+    all_predictions: List[Dict[str, Any]] = []
+    for (_, _), innings_df in deliveries.groupby(["match_id", "inning"], sort=False):
+        all_predictions.extend(_simulate_innings_predictions(innings_df))
+
+    if save_path:
+        save_file = Path(save_path)
+        save_file.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(all_predictions).to_csv(save_file, index=False)
+
+    return all_predictions
+
+
+if __name__ == "__main__":
+    rows = run_simulation()
+    print(f"Simulation rows generated: {len(rows)}")
+
+----- END FILE: simulation_engine.py -----
+
+----- BEGIN FILE: test_inference.py -----
+"""Simple test runner for live inference."""
+
+from inference import predict_live
+
+
+def main() -> None:
+    """Run a sample inference call and print readable output."""
+    try:
+        result = predict_live(
+            batting_team="Mumbai Indians",
+            bowling_team="Chennai Super Kings",
+            runs=85,
+            wickets=3,
+            overs=10.2,
+        )
+
+        predicted_winner = result.get("predicted_winner", "N/A")
+        win_percentage = result.get("win_percentage", "N/A")
+        predicted_score = result.get("predicted_score")
+        target_over = result.get("target_over", 20)
+
+        print("Live Prediction Result")
+        print("----------------------")
+        print(f"Predicted Winner: {predicted_winner} ({win_percentage})")
+        if predicted_score is None:
+            print("Predicted Score: N/A")
+        else:
+            print(f"Predicted Score ({target_over} overs): {int(predicted_score)}")
+
+    except Exception as exc:  # pylint: disable=broad-except
+        print("Inference failed.")
+        print(f"Error: {exc}")
+
+
+if __name__ == "__main__":
+    main()
+----- END FILE: test_inference.py -----
+
+----- BEGIN FILE: test_scraper.py -----
+"""Quick scraper verification script."""
+
+from __future__ import annotations
+
+import json
+import sys
+
+from scraper import CricinfoScrapeError, scrape_live_match
+
+
+def main() -> None:
+    """
+    Test scraper output format.
+
+    Usage:
+    - Auto live mode: python test_scraper.py
+    - URL mode:       python test_scraper.py "<espn_cricinfo_url>"
+    """
+    url = sys.argv[1] if len(sys.argv) > 1 else None
+    try:
+        data = scrape_live_match(url=url, timeout=15)
+        print(json.dumps(data, indent=2))
+    except CricinfoScrapeError as exc:
+        print(f"Scraper error: {exc}")
+        raise SystemExit(2)
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"Unexpected error: {exc}")
+        raise SystemExit(3)
+
+
+if __name__ == "__main__":
+    main()
+
+----- END FILE: test_scraper.py -----
+

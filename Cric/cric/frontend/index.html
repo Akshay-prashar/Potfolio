@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CricAI — IPL Match Center</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="icon" href="data:;base64,=">
+</head>
+<body>
+  <div class="ambient-mesh"></div>
+
+  <header class="navbar">
+    <a href="/" class="brand"><div class="brand-dot"></div>CricAI</a>
+    <nav class="nav-links">
+      <a href="/" class="active">Live</a>
+      <a href="./training.html">Training</a>
+    </nav>
+  </header>
+
+  <main class="container fade-up">
+
+    <!-- Live match hero (hidden when no live) -->
+    <section id="liveSection" style="display:none;" class="section">
+      <div id="liveHero"></div>
+    </section>
+
+    <!-- Upcoming -->
+    <section class="section">
+      <p class="label" style="margin-bottom:1rem;">Upcoming IPL Fixtures</p>
+      <div id="upcomingGrid" class="match-grid"></div>
+    </section>
+
+  </main>
+
+  <script src="./js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Pilot | AI Literature Scout</title>
+    <link rel="stylesheet" href="landing.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Import Map for Three.js and Addons -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- WebGL Background -->
+    <div id="canvas-container"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-links">
+                <a href="#" class="nav-link">Home</a>
+                <a href="#" class="nav-link">About</a>
+                <a href="#" class="nav-link">Contact</a>
+
+                <!-- Dropdown -->
+                <div class="nav-item dropdown">
+                    <span class="nav-link dropdown-trigger">Technologies Used <span class="arrow">▼</span></span>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item">FastAPI</div>
+                        <div class="dropdown-item">Python</div>
+                        <div class="dropdown-item">Three.js / WebGL</div>
+                        <div class="dropdown-item">OpenAI</div>
+                        <div class="dropdown-item">Tailwind CSS</div>
+                        <div class="dropdown-item">Alpine.js</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Research Pilot</h1>
+            <p class="hero-subtitle">AI-Powered Literature Scout</p>
+            <a href="index.html" class="cta-button">
+                <span class="cta-text">Launch App</span>
+                <div class="cta-glow"></div>
+            </a>
+        </div>
+    </main>
+
+    <!-- Main Script (Module) -->
+    <script type="module" src="landing.js"></script>
+</body>
+
+</html>

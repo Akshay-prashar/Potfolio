@@ -1,0 +1,184 @@
+# ==============================================================================
+# IPL AI RETRAINING SCRIPT (COPY-PASTE ENTIRE CODE BLOCK INTO GOOGLE COLAB)
+# ==============================================================================
+# 1. Download the dataset (Matches + Deliveries) and upload them to your Colab session.
+# 2. Name them `matches.csv` and `deliveries.csv`
+# 3. Paste this entire script into a single cell and click Play.
+# 4. Download the generated `winner_model.pkl`, `score_model.pkl`, and `preprocessing_objects.pkl`
+#    and replace the ones in your local `cric/models` folder.
+# ==============================================================================
+
+import pandas as pd
+import numpy as np
+import joblib
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, mean_absolute_error
+
+print("Loading datasets...")
+try:
+    df_matches = pd.read_csv('matches.csv', low_memory=False)
+    df_deliveries = pd.read_csv('deliveries.csv', low_memory=False)
+except FileNotFoundError:
+    print("ERROR: Please upload matches.csv and deliveries.csv to the Colab files area first.")
+    exit()
+
+# Rename common IDs
+df_matches.rename(columns={'id': 'match_id'}, inplace=True, errors='ignore')
+df_deliveries.rename(columns={'id': 'match_id', 'innings': 'inning'}, inplace=True, errors='ignore')
+
+# ------------------------------------------------------------------------------
+# 1. FIX THE DATA FOR CHASES (TARGET AND REQUIRED RUN RATE)
+# ------------------------------------------------------------------------------
+print("Processing balls and discovering targets...")
+
+# Get total runs scored in 1st innings to set the target for the 2nd innings
+first_innings_scores = df_deliveries[df_deliveries['inning'] == 1].groupby('match_id')['total_runs'].sum().reset_index()
+first_innings_scores.rename(columns={'total_runs': 'target_runs'}, inplace=True)
+first_innings_scores['target_runs'] += 1 # target is 1 more than score
+
+# Merge target runs into all deliveries for that match
+df = df_deliveries.merge(first_innings_scores, on='match_id', how='left')
+
+# If it's the 1st inning, there is no target yet. We set it to 0.
+df['target_runs'] = np.where(df['inning'] == 1, 0, df['target_runs'])
+# Drop matches where target isn't found for a 2nd innings chase
+df = df.dropna(subset=['target_runs'])
+
+# ------------------------------------------------------------------------------
+# 2. RUNS, WICKETS, AND OVERS AT EACH BALL
+# ------------------------------------------------------------------------------
+df['runs'] = pd.to_numeric(df['total_runs'], errors='coerce').fillna(0)
+df['is_wicket'] = pd.to_numeric(df.get('is_wicket', 0), errors='coerce').fillna(0)
+
+# Sort logically to build cumulative stats
+df = df.sort_values(by=['match_id', 'inning', 'over', 'ball'])
+
+# Calculate cumulative runs and wickets up to that ball
+df['current_runs'] = df.groupby(['match_id', 'inning'])['runs'].cumsum()
+df['current_wickets'] = df.groupby(['match_id', 'inning'])['is_wicket'].cumsum().clip(upper=10)
+
+# Calculate balls bowled and balls left
+df['balls_bowled'] = (df['over'] - 1) * 6 + df['ball']
+df['balls_left'] = np.maximum(120 - df['balls_bowled'], 0)
+
+# Calculate current run rate
+df['current_run_rate'] = np.where(df['balls_bowled'] > 0, (df['current_runs'] * 6) / df['balls_bowled'], 0)
+
+# Calculate required run rate (Only matters for 2nd innings)
+# Safe divide by balls left to get RRR, max out at 36 (hitting sixes on every remaining ball)
+df['required_run_rate'] = np.where(
+    (df['inning'] == 2) & (df['balls_left'] > 0),
+    ((df['target_runs'] - df['current_runs']) * 6) / df['balls_left'],
+    0
+)
+# If runs needed but 0 balls left, cap it high
+df['required_run_rate'] = df['required_run_rate'].clip(lower=0, upper=36)
+
+# ------------------------------------------------------------------------------
+# 3. MERGE WINNER DATA
+# ------------------------------------------------------------------------------
+df_matches = df_matches[['match_id', 'winner']].dropna()
+df = df.merge(df_matches, on='match_id', how='inner')
+
+# Create binary target (Did the batting team win?)
+df['batting_team'] = df['batting_team'].astype(str)
+df['bowling_team'] = df['bowling_team'].astype(str)
+df['winner'] = df['winner'].astype(str)
+
+df['batting_team_won'] = (df['batting_team'] == df['winner']).astype(int)
+
+# ------------------------------------------------------------------------------
+# 4. ENCODE TEAMS (Saves mappings for the backend)
+# ------------------------------------------------------------------------------
+print("Encoding features...")
+bat_encoder = LabelEncoder()
+bow_encoder = LabelEncoder()
+win_encoder = LabelEncoder() # Just tracking winner classes if needed
+
+df['batting_team_enc'] = bat_encoder.fit_transform(df['batting_team'])
+df['bowling_team_enc'] = bow_encoder.fit_transform(df['bowling_team'])
+win_encoder.fit(df['winner'])
+
+# ------------------------------------------------------------------------------
+# 5. TRAIN WINNER MODEL (XGBoost)
+# ------------------------------------------------------------------------------
+print("Training Winner AI Model (with Target and RRR)...")
+# Note the NEW features added: 'inning', 'target_runs', 'required_run_rate'
+winner_features = [
+    'batting_team_enc', 'bowling_team_enc', 'inning', 
+    'current_runs', 'current_wickets', 'balls_left', 
+    'current_run_rate', 'target_runs', 'required_run_rate'
+]
+
+X_win = df[winner_features]
+y_win = df['batting_team_won']
+
+X_train, X_test, y_train, y_test = train_test_split(X_win, y_win, test_size=0.2, random_state=42)
+
+winner_model = XGBClassifier(
+    n_estimators=300, 
+    max_depth=5, 
+    learning_rate=0.05, 
+    random_state=42, 
+    eval_metric='logloss'
+)
+winner_model.fit(X_train, y_train)
+
+# Evaluate precision
+y_pred = winner_model.predict(X_test)
+win_acc = accuracy_score(y_test, y_pred)
+print(f"Winner Model Accuracy: {win_acc:.2%}")
+
+# ------------------------------------------------------------------------------
+# 6. TRAIN SCORE PREDICTION MODEL (XGBoost)
+# ------------------------------------------------------------------------------
+print("Training Score/Session Model...")
+
+# Target for exactly end of 1st innings score (Only 1st innings predicting total score)
+df_1st = df[df['inning'] == 1].copy()
+final_scores = df_1st.groupby('match_id')['current_runs'].max().reset_index()
+final_scores.rename(columns={'current_runs': 'final_score'}, inplace=True)
+
+df_1st = df_1st.merge(final_scores, on='match_id', how='left')
+
+score_features = [
+    'batting_team_enc', 'bowling_team_enc', 
+    'current_runs', 'current_wickets', 'balls_left', 'current_run_rate'
+]
+
+X_score = df_1st[score_features]
+y_score = df_1st['final_score']
+
+Xs_train, Xs_test, ys_train, ys_test = train_test_split(X_score, y_score, test_size=0.2, random_state=42)
+
+score_model = XGBRegressor(
+    n_estimators=400, 
+    max_depth=6, 
+    learning_rate=0.05, 
+    random_state=42
+)
+score_model.fit(Xs_train, ys_train)
+
+ys_pred = score_model.predict(Xs_test)
+score_mae = mean_absolute_error(ys_test, ys_pred)
+print(f"Score Model Mean Absolute Error: {score_mae:.1f} runs")
+
+# ------------------------------------------------------------------------------
+# 7. EXPORT ARTIFACTS
+# ------------------------------------------------------------------------------
+print("Exporting .pkl artifacts...")
+joblib.dump(winner_model, 'winner_model.pkl')
+joblib.dump(score_model, 'score_model.pkl')
+
+preprocessing_objects = {
+    'batting_encoder_classes': bat_encoder.classes_.tolist(),
+    'bowling_encoder_classes': bow_encoder.classes_.tolist(),
+    'winner_encoder_classes': win_encoder.classes_.tolist(),
+    'winner_feature_cols': winner_features,
+    'score_feature_cols': score_features
+}
+joblib.dump(preprocessing_objects, 'preprocessing_objects.pkl')
+
+print("SUCCESS! Download the 3 .pkl files and replace them in your local `cric/models/` directory.")
