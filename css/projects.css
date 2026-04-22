@@ -1,0 +1,246 @@
+/* ============================================================
+   PROJECTS PAGE — Glassmorphism cards grid
+   ============================================================ */
+
+/* ── Page Header ──────────────────────────────────────────── */
+.projects-header {
+  padding-top: calc(var(--nav-height) + var(--space-16));
+  padding-bottom: var(--space-12);
+  text-align: center;
+}
+
+.projects-header__title {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--space-4);
+}
+
+.projects-header__subtitle {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ── Filter Chips ─────────────────────────────────────────── */
+.filters {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-12);
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.filter-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+  background: var(--glass-bg);
+}
+
+.filter-chip.active {
+  color: var(--bg-primary);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Glass Grid ───────────────────────────────────────────── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-8);
+  padding-bottom: var(--section-padding);
+}
+
+/* ── Glass Card ───────────────────────────────────────────── */
+.glass-card {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform var(--duration-slow) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              background var(--duration-normal) var(--ease-out);
+  will-change: transform;
+}
+
+.glass-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: var(--glass-border-hover);
+  background: var(--glass-bg-hover);
+  box-shadow: var(--glass-shadow),
+              0 0 40px rgba(34, 197, 94, 0.06);
+  color: inherit;
+}
+
+/* subtle inner glow on hover */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent);
+  opacity: 0;
+  transition: opacity var(--duration-normal);
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+}
+
+/* corner glow accent */
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--duration-slow);
+  pointer-events: none;
+}
+
+.glass-card:hover::after {
+  opacity: 0.5;
+}
+
+/* ── Card Image ───────────────────────────────────────────── */
+.glass-card__image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.glass-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slower) var(--ease-out);
+}
+
+.glass-card:hover .glass-card__image {
+  transform: scale(1.05);
+}
+
+.glass-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(10, 10, 10, 0.7) 0%,
+    transparent 50%);
+}
+
+/* ── Card Body ────────────────────────────────────────────── */
+.glass-card__body {
+  padding: var(--space-6);
+}
+
+.glass-card__category {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-2);
+}
+
+.glass-card__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-semi);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+.glass-card__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-4);
+}
+
+.glass-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.glass-card__arrow {
+  position: absolute;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.glass-card:hover .glass-card__arrow {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+  transform: translate(2px, -2px);
+}
+
+.glass-card__arrow svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  .projects-header {
+    padding-top: calc(var(--nav-height) + var(--space-10));
+    text-align: left;
+  }
+
+  .projects-header__subtitle {
+    margin: 0;
+  }
+
+  .filters {
+    justify-content: flex-start;
+  }
+}

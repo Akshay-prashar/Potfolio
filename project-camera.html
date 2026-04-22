@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wireless Camera Streaming — Akshay Prashar</title>
+  <meta name="description" content="Case study: A zero-install wireless camera streaming solution using WebRTC, Python, and PyQt5 for ultra-low latency phone-to-PC video.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/project-detail.css">
+</head>
+<body class="page-detail page-enter">
+
+  <a href="#main" class="skip-link">Skip to content</a>
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="index.html" class="nav__logo">akshay<span>.</span></a>
+    <div class="nav__links" id="nav-links">
+      <a href="index.html" class="nav__link">Home</a>
+      <a href="projects.html" class="nav__link">Projects</a>
+      <a href="about.html" class="nav__link">About</a>
+      <a href="contact.html" class="nav__link nav__cta btn btn--ghost btn--sm">Contact</a>
+    </div>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <main id="main">
+    <div class="container">
+      <section class="detail-hero">
+        <a href="projects.html" class="detail-hero__back">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Projects
+        </a>
+        <span class="detail-hero__category">Real-Time Systems</span>
+        <h1 class="detail-hero__title">Wireless Camera Stream</h1>
+        <p class="detail-hero__summary">
+          A high-performance phone-to-PC camera streaming solution using WebRTC over local WiFi — zero install on the phone, ultra-low latency desktop viewer.
+        </p>
+        <div class="detail-hero__meta">
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Role</span>
+            <span class="detail-hero__meta-value">Systems Developer</span>
+          </div>
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Type</span>
+            <span class="detail-hero__meta-value">Real-Time Streaming</span>
+          </div>
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Stack</span>
+            <span class="detail-hero__meta-value">Python, WebRTC, PyQt5</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <img src="assets/thumb-camera.webp" alt="Wireless Camera Stream — live video feed interface" class="detail-banner" loading="lazy">
+
+    <div class="container">
+      <div class="detail-body">
+        <aside class="detail-sidebar">
+          <div class="detail-sidebar__section">
+            <h3 class="detail-sidebar__heading">Tech Stack</h3>
+            <div class="detail-sidebar__list">
+              <span class="detail-sidebar__item">Python 3.x</span>
+              <span class="detail-sidebar__item">WebRTC / aiortc</span>
+              <span class="detail-sidebar__item">aiohttp</span>
+              <span class="detail-sidebar__item">PyQt5</span>
+              <span class="detail-sidebar__item">PyAV</span>
+            </div>
+          </div>
+          <div class="detail-sidebar__section">
+            <h3 class="detail-sidebar__heading">Links</h3>
+            <div class="detail-sidebar__links">
+              <a href="#" class="detail-sidebar__link">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                Source Code
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        <div class="detail-content">
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Problem</h2>
+            <p class="detail-section__text">
+              Using a phone as a wireless webcam typically requires installing third-party apps on both devices, dealing with USB drivers, or accepting high latency and unreliable connections. Existing solutions like DroidCam require app installations, and browser-based alternatives suffer from encoding lag.
+            </p>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Solution</h2>
+            <p class="detail-section__text">
+              Built a two-part system: a lightweight web page served over local WiFi that accesses the phone's camera via the browser (zero install required), and a native Python desktop viewer using PyQt5 that receives the stream via WebRTC for ultra-low latency display.
+            </p>
+            <p class="detail-section__text">
+              The signaling server runs on the PC using aiohttp, handling WebRTC offer/answer exchange. The actual video stream uses peer-to-peer WebRTC — bypassing server encoding entirely for minimal latency.
+            </p>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Key Features</h2>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Zero-Install Phone Side</p>
+                  <p class="feature-list__item-desc">Phone opens a local URL in any browser — no app installation needed. Works on any phone with a modern browser.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">WebRTC Peer-to-Peer</p>
+                  <p class="feature-list__item-desc">Direct video stream between phone browser and PC viewer — no server-side re-encoding, resulting in sub-100ms latency.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Native Desktop Viewer</p>
+                  <p class="feature-list__item-desc">PyQt5-based viewer with smooth frame rendering, FPS overlay, and window controls.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">AI Vision Integration</p>
+                  <p class="feature-list__item-desc">Extended with YOLOv8n real-time object detection and centroid-based tracking with persistent IDs.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Challenges</h2>
+            <p class="detail-section__text">
+              <strong>Frame jitter:</strong> Initial implementation showed visible frame drops. Solved by implementing exponential moving average FPS stabilization and decoupling the render thread from the decode thread.
+            </p>
+            <p class="detail-section__text">
+              <strong>Cross-device WebRTC:</strong> Different phone browsers handle WebRTC capabilities differently. Required careful negotiation of codecs and ICE candidates for reliable cross-device connections.
+            </p>
+          </section>
+
+          <div class="outcome-block">
+            <h2 class="outcome-block__title">Outcome</h2>
+            <p class="outcome-block__text">
+              A plug-and-play wireless camera solution that runs on any WiFi network without installing anything on the phone. The system achieves low latency suitable for real-time use cases — from video calls to AI-powered computer vision experiments.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="next-project">
+      <div class="container">
+        <p class="next-project__label">Next Project</p>
+        <a href="project-gesture.html" class="next-project__link">Gesture Control System →</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/nav.js"></script>
+  <script src="js/project-detail.js"></script>
+</body>
+</html>

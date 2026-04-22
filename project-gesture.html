@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gesture Control System — Akshay Prashar</title>
+  <meta name="description" content="Case study: A real-time hand gesture control system using Python, OpenCV, and MediaPipe for hands-free OS interaction.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/project-detail.css">
+</head>
+<body class="page-detail page-enter">
+
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="index.html" class="nav__logo">akshay<span>.</span></a>
+    <div class="nav__links" id="nav-links">
+      <a href="index.html" class="nav__link">Home</a>
+      <a href="projects.html" class="nav__link">Projects</a>
+      <a href="about.html" class="nav__link">About</a>
+      <a href="contact.html" class="nav__link nav__cta btn btn--ghost btn--sm">Contact</a>
+    </div>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <main id="main">
+
+    <div class="container">
+      <section class="detail-hero">
+        <a href="projects.html" class="detail-hero__back">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Projects
+        </a>
+        <span class="detail-hero__category">Computer Vision</span>
+        <h1 class="detail-hero__title">Gesture Control System</h1>
+        <p class="detail-hero__summary">
+          A modular, real-time hand gesture recognition system that translates webcam input into OS-level commands — enabling hands-free control of any application.
+        </p>
+        <div class="detail-hero__meta">
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Role</span>
+            <span class="detail-hero__meta-value">Sole Developer</span>
+          </div>
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Type</span>
+            <span class="detail-hero__meta-value">Real-Time CV System</span>
+          </div>
+          <div class="detail-hero__meta-item">
+            <span class="detail-hero__meta-label">Stack</span>
+            <span class="detail-hero__meta-value">Python, OpenCV, MediaPipe</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <img src="assets/thumb-gesture.webp" alt="Gesture Control System — hand tracking visualization" class="detail-banner" loading="lazy">
+
+    <div class="container">
+      <div class="detail-body">
+
+        <aside class="detail-sidebar">
+          <div class="detail-sidebar__section">
+            <h3 class="detail-sidebar__heading">Tech Stack</h3>
+            <div class="detail-sidebar__list">
+              <span class="detail-sidebar__item">Python 3.x</span>
+              <span class="detail-sidebar__item">OpenCV</span>
+              <span class="detail-sidebar__item">MediaPipe</span>
+              <span class="detail-sidebar__item">PyAutoGUI</span>
+              <span class="detail-sidebar__item">NumPy</span>
+            </div>
+          </div>
+          <div class="detail-sidebar__section">
+            <h3 class="detail-sidebar__heading">Links</h3>
+            <div class="detail-sidebar__links">
+              <a href="#" class="detail-sidebar__link">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                Source Code
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        <div class="detail-content">
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Problem</h2>
+            <p class="detail-section__text">
+              Traditional input devices — mouse, keyboard, touchpad — require physical contact. For scenarios like presentations, accessibility needs, or experimental interfaces, there is a gap for natural, contactless interaction with a computer.
+            </p>
+            <p class="detail-section__text">
+              Existing gesture solutions are either hardware-dependent (Leap Motion), expensive, or lack the modularity to adapt across different applications and contexts.
+            </p>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Solution</h2>
+            <p class="detail-section__text">
+              Built a Python-based gesture control pipeline that uses a standard webcam to track hand landmarks in real-time via MediaPipe, interprets configured gestures, and dispatches system-level commands through PyAutoGUI.
+            </p>
+            <p class="detail-section__text">
+              The system uses a modular profile architecture — each application (Chrome, VLC, system controls) gets its own gesture mapping that can be swapped at runtime without restarting the pipeline.
+            </p>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Key Features</h2>
+            <div class="feature-list">
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Real-Time Hand Tracking</p>
+                  <p class="feature-list__item-desc">21-point hand landmark detection at 30+ FPS using MediaPipe's optimized pipeline.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Context-Aware Profiles</p>
+                  <p class="feature-list__item-desc">Separate gesture mappings for system control, Chrome browser, VLC media player, and custom applications.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Gesture Confidence Scoring</p>
+                  <p class="feature-list__item-desc">Filters out jittery or accidental gestures using rolling confidence windows to prevent false triggers.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Cursor Edge Reach</p>
+                  <p class="feature-list__item-desc">Soft clamping and dead zones ensure the cursor can reach all screen edges naturally.</p>
+                </div>
+              </div>
+              <div class="feature-list__item">
+                <div>
+                  <p class="feature-list__item-title">Modular Architecture</p>
+                  <p class="feature-list__item-desc">Clean separation of detection, gesture recognition, and action dispatch — easily extensible for new gestures and applications.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <h2 class="detail-section__heading">Challenges</h2>
+            <p class="detail-section__text">
+              <strong>Latency:</strong> Achieving smooth cursor movement required decoupling the detection loop from the rendering loop and using exponential moving averages for FPS stabilization.
+            </p>
+            <p class="detail-section__text">
+              <strong>False positives:</strong> Random hand movements triggered unintended commands. Solved by implementing a confidence threshold system with temporal smoothing.
+            </p>
+            <p class="detail-section__text">
+              <strong>Edge detection:</strong> Mapping hand positions to full screen coordinates with dead zones at edges required careful calibration of the coordinate transform pipeline.
+            </p>
+          </section>
+
+          <div class="outcome-block">
+            <h2 class="outcome-block__title">Outcome</h2>
+            <p class="outcome-block__text">
+              A fully functional hands-free control system that runs on any Windows laptop with a webcam. The modular design makes it a foundation for future extensions — including integration with voice control and brain-computer interfaces.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <section class="next-project">
+      <div class="container">
+        <p class="next-project__label">Next Project</p>
+        <a href="project-ipl.html" class="next-project__link">IPL Prediction Model →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/nav.js"></script>
+  <script src="js/project-detail.js"></script>
+</body>
+</html>

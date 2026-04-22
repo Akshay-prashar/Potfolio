@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects — Akshay Prashar</title>
+  <meta name="description" content="Explore Akshay Prashar's portfolio of projects spanning machine learning, computer vision, real-time systems, and full-stack development.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/projects.css">
+</head>
+<body class="page-enter">
+
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="index.html" class="nav__logo">akshay<span>.</span></a>
+    <div class="nav__links" id="nav-links">
+      <a href="index.html" class="nav__link">Home</a>
+      <a href="projects.html" class="nav__link">Projects</a>
+      <a href="about.html" class="nav__link">About</a>
+      <a href="contact.html" class="nav__link nav__cta btn btn--ghost btn--sm">Contact</a>
+    </div>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <main id="main">
+
+    <!-- Page Header -->
+    <div class="container">
+      <header class="projects-header">
+        <h1 class="projects-header__title">Projects</h1>
+        <p class="projects-header__subtitle">A collection of systems built to solve real problems — from gesture interfaces to predictive models.</p>
+      </header>
+
+      <!-- Filters -->
+      <div class="filters">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="ml">Machine Learning</button>
+        <button class="filter-chip" data-filter="cv">Computer Vision</button>
+        <button class="filter-chip" data-filter="web">Web & Streaming</button>
+      </div>
+
+      <!-- Projects Grid -->
+      <div class="projects-grid">
+
+        <!-- Gesture Control -->
+        <a href="project-gesture.html" class="glass-card" data-category="cv">
+          <div class="glass-card__image-wrap">
+            <img src="assets/thumb-gesture.webp" alt="Gesture Control System — real-time hand tracking interface" class="glass-card__image" loading="lazy">
+            <div class="glass-card__overlay"></div>
+          </div>
+          <div class="glass-card__body">
+            <p class="glass-card__category">Computer Vision</p>
+            <h2 class="glass-card__title">Gesture Control System</h2>
+            <p class="glass-card__desc">Translates webcam hand tracking into system-level commands. Modular profiles for Chrome, VLC, and system control — no external hardware needed.</p>
+            <div class="glass-card__chips">
+              <span class="chip">Python</span>
+              <span class="chip">OpenCV</span>
+              <span class="chip">MediaPipe</span>
+              <span class="chip">PyAutoGUI</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- IPL Prediction -->
+        <a href="project-ipl.html" class="glass-card" data-category="ml">
+          <div class="glass-card__image-wrap">
+            <img src="assets/thumb-ipl.webp" alt="IPL Match Prediction — data analytics dashboard" class="glass-card__image" loading="lazy">
+            <div class="glass-card__overlay"></div>
+          </div>
+          <div class="glass-card__body">
+            <p class="glass-card__category">Machine Learning</p>
+            <h2 class="glass-card__title">IPL Winner & Score Prediction</h2>
+            <p class="glass-card__desc">Predicts match winner and final innings score ball-by-ball using engineered contextual features and XGBoost models.</p>
+            <div class="glass-card__chips">
+              <span class="chip">XGBoost</span>
+              <span class="chip">Pandas</span>
+              <span class="chip">FastAPI</span>
+              <span class="chip">Scikit-learn</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- AI Lit Scout -->
+        <a href="project-litscout.html" class="glass-card" data-category="ml">
+          <div class="glass-card__image-wrap">
+            <img src="assets/thumb-litscout.webp" alt="AI Literature Scout — research paper analysis tool" class="glass-card__image" loading="lazy">
+            <div class="glass-card__overlay"></div>
+          </div>
+          <div class="glass-card__body">
+            <p class="glass-card__category">AI / NLP</p>
+            <h2 class="glass-card__title">AI-Powered Literature Scout</h2>
+            <p class="glass-card__desc">Upload academic PDFs and receive AI-generated summaries, key points, and structured insights — solving information overload for researchers.</p>
+            <div class="glass-card__chips">
+              <span class="chip">FastAPI</span>
+              <span class="chip">NLP</span>
+              <span class="chip">Uvicorn</span>
+              <span class="chip">JavaScript</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- Camera Stream -->
+        <a href="project-camera.html" class="glass-card" data-category="web">
+          <div class="glass-card__image-wrap">
+            <img src="assets/thumb-camera.webp" alt="Wireless Camera Stream — real-time WebRTC feed" class="glass-card__image" loading="lazy">
+            <div class="glass-card__overlay"></div>
+          </div>
+          <div class="glass-card__body">
+            <p class="glass-card__category">Real-Time Systems</p>
+            <h2 class="glass-card__title">Wireless Camera Streaming</h2>
+            <p class="glass-card__desc">Streams phone camera to PC over local WiFi with ultra-low latency via WebRTC. Zero-install, high-performance desktop viewer.</p>
+            <div class="glass-card__chips">
+              <span class="chip">WebRTC</span>
+              <span class="chip">aiortc</span>
+              <span class="chip">PyQt5</span>
+              <span class="chip">aiohttp</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- Amazon Clone -->
+        <a href="Amazon/Amazon.html" class="glass-card" data-category="web">
+          <div class="glass-card__body">
+            <p class="glass-card__category">Web Development</p>
+            <h2 class="glass-card__title">Amazon Clone</h2>
+            <p class="glass-card__desc">A frontend clone of the Amazon web interface.</p>
+            <div class="glass-card__chips">
+              <span class="chip">HTML</span>
+              <span class="chip">CSS</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- Netflix Clone -->
+        <a href="Netflix/Netflix.html" class="glass-card" data-category="web">
+          <div class="glass-card__body">
+            <p class="glass-card__category">Web Development</p>
+            <h2 class="glass-card__title">Netflix Clone</h2>
+            <p class="glass-card__desc">A frontend clone of the Netflix web interface.</p>
+            <div class="glass-card__chips">
+              <span class="chip">HTML</span>
+              <span class="chip">CSS</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- Tic Tac Toe -->
+        <a href="TicTacToe/TicTacToe.html" class="glass-card" data-category="web">
+          <div class="glass-card__body">
+            <p class="glass-card__category">Web Development</p>
+            <h2 class="glass-card__title">Tic Tac Toe</h2>
+            <p class="glass-card__desc">A classic Tic Tac Toe game played in the browser.</p>
+            <div class="glass-card__chips">
+              <span class="chip">HTML</span>
+              <span class="chip">CSS</span>
+              <span class="chip">JavaScript</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+        <!-- Calculator -->
+        <a href="Calculator/Calculator.html" class="glass-card" data-category="web">
+          <div class="glass-card__body">
+            <p class="glass-card__category">Web Development</p>
+            <h2 class="glass-card__title">Calculator</h2>
+            <p class="glass-card__desc">A functional web-based calculator.</p>
+            <div class="glass-card__chips">
+              <span class="chip">HTML</span>
+              <span class="chip">CSS</span>
+              <span class="chip">JavaScript</span>
+            </div>
+          </div>
+          <div class="glass-card__arrow">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <p class="footer__copy">&copy; 2025 Akshay Prashar</p>
+        <div class="footer__links">
+          <a href="https://github.com" class="footer__link" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://linkedin.com" class="footer__link" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="mailto:akshay@example.com" class="footer__link">Email</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/nav.js"></script>
+  <script src="js/projects-grid.js"></script>
+</body>
+</html>

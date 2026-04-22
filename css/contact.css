@@ -1,0 +1,137 @@
+/* ============================================================
+   CONTACT PAGE — Minimal, polished links
+   ============================================================ */
+
+.contact-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: var(--nav-height);
+}
+
+.contact-inner {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-6);
+  text-align: center;
+}
+
+.contact__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-4);
+}
+
+.contact__title {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--space-4);
+}
+
+.contact__subtitle {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0 auto var(--space-12);
+  max-width: 460px;
+}
+
+/* ── Link Cards ───────────────────────────────────────────── */
+.contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.contact-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--duration-normal) var(--ease-out);
+  cursor: pointer;
+}
+
+.contact-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: inherit;
+}
+
+.contact-link__icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  transition: all var(--duration-normal);
+}
+
+.contact-link:hover .contact-link__icon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.contact-link__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.contact-link__text {
+  text-align: left;
+}
+
+.contact-link__label {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+}
+
+.contact-link__value {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Bottom note ──────────────────────────────────────────── */
+.contact__note {
+  margin-top: var(--space-12);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .contact-inner {
+    text-align: left;
+    padding: var(--space-10) var(--space-6);
+  }
+
+  .contact__subtitle {
+    margin-left: 0;
+  }
+
+  .contact-links {
+    margin-left: 0;
+  }
+}

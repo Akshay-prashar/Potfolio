@@ -1,31 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>This is me</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akshay Prashar — Developer</title>
+  <meta name="description" content="Akshay Prashar is a developer building intelligent systems at the intersection of AI, real-time processing, and modern web experiences.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/home.css">
 </head>
-
 <body>
-    <nav>
-        <h1>This is not potfolio</h1>
-        <h3>Some projects</h3>
-    </nav>
-    <main>
-        <ul style="font-size: 24px;">
-            <li><a href="Amazon/Amazon.html">Amazon</a></li>
-            <li><a href="Netflix/Netflix.html">Netflix</a></li>
-            <li><a href="TicTacToe/TicTacToe.html">TicTacToe</a></li>
-            <li><a href="Calculator/Calculator.html">Calculator</a></li>
-        </ul>
-    </main>
-    <footer>
-        <p>
-            This is by <b>akshay prashar</b>.
-        </p>
-    </footer>
 
+  <!-- Skip to content -->
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- Loading Overlay -->
+  <div class="loader" id="loader">
+    <div class="loader__content">
+      <p class="loader__text">Akshay Prashar</p>
+      <div class="loader__bar">
+        <div class="loader__bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="index.html" class="nav__logo">akshay<span>.</span></a>
+    <div class="nav__links" id="nav-links">
+      <a href="index.html" class="nav__link">Home</a>
+      <a href="projects.html" class="nav__link">Projects</a>
+      <a href="about.html" class="nav__link">About</a>
+      <a href="contact.html" class="nav__link nav__cta btn btn--ghost btn--sm">Contact</a>
+    </div>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="main">
+
+    <!-- Hero Section -->
+    <section class="hero section--full">
+      <div class="spline-container" aria-hidden="true">
+        <canvas id="canvas3d"></canvas>
+        <div class="spline-watermark-hider"></div>
+      </div>
+      <div class="container">
+        <div class="hero__content">
+          <p class="hero__label reveal">Available for opportunities</p>
+          <h1 class="hero__heading reveal stagger-1">
+            <span class="line">Akshay</span>
+            <span class="line"><span class="highlight">Prashar</span></span>
+          </h1>
+          <p class="hero__subtext reveal stagger-2">
+            Developer crafting intelligent systems — from real-time computer vision 
+            to predictive ML models and high-performance streaming tools.
+          </p>
+          <div class="hero__actions reveal stagger-3">
+            <a href="projects.html" class="btn btn--primary btn--lg">View Projects</a>
+            <a href="about.html" class="btn btn--ghost btn--lg">About Me</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero__scroll" aria-hidden="true">
+        <span>Scroll</span>
+        <div class="hero__scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- Featured Projects -->
+    <section class="section featured" id="featured">
+      <div class="container">
+        <div class="featured__header reveal">
+          <h2 class="featured__title">Selected Work</h2>
+          <a href="projects.html" class="btn btn--ghost btn--sm">All Projects</a>
+        </div>
+        <div class="featured__grid">
+          <a href="project-gesture.html" class="featured__card reveal stagger-1">
+            <img src="assets/thumb-gesture.webp" alt="Gesture Control System preview" class="featured__card-image" loading="lazy">
+            <div class="featured__card-body">
+              <h3 class="featured__card-title">Gesture Control System</h3>
+              <p class="featured__card-desc">Hands-free OS control through real-time webcam hand tracking with modular gesture profiles.</p>
+              <div class="featured__card-chips">
+                <span class="chip">Python</span>
+                <span class="chip">OpenCV</span>
+                <span class="chip">MediaPipe</span>
+              </div>
+            </div>
+          </a>
+          <a href="project-ipl.html" class="featured__card reveal stagger-2">
+            <img src="assets/thumb-ipl.webp" alt="IPL Prediction Model preview" class="featured__card-image" loading="lazy">
+            <div class="featured__card-body">
+              <h3 class="featured__card-title">IPL Prediction Model</h3>
+              <p class="featured__card-desc">Ball-by-ball match winner and score prediction using contextual feature engineering.</p>
+              <div class="featured__card-chips">
+                <span class="chip">XGBoost</span>
+                <span class="chip">FastAPI</span>
+                <span class="chip">Pandas</span>
+              </div>
+            </div>
+          </a>
+          <a href="project-litscout.html" class="featured__card reveal stagger-3">
+            <img src="assets/thumb-litscout.webp" alt="AI Literature Scout preview" class="featured__card-image" loading="lazy">
+            <div class="featured__card-body">
+              <h3 class="featured__card-title">AI Literature Scout</h3>
+              <p class="featured__card-desc">Upload academic PDFs and receive AI-generated summaries, key points, and research insights.</p>
+              <div class="featured__card-chips">
+                <span class="chip">FastAPI</span>
+                <span class="chip">NLP</span>
+                <span class="chip">JavaScript</span>
+              </div>
+            </div>
+          </a>
+          <a href="project-camera.html" class="featured__card reveal stagger-4">
+            <img src="assets/thumb-camera.webp" alt="Camera Streaming App preview" class="featured__card-image" loading="lazy">
+            <div class="featured__card-body">
+              <h3 class="featured__card-title">Wireless Camera Stream</h3>
+              <p class="featured__card-desc">Stream phone camera to PC over WiFi with ultra-low latency via WebRTC.</p>
+              <div class="featured__card-chips">
+                <span class="chip">WebRTC</span>
+                <span class="chip">PyQt5</span>
+                <span class="chip">aiohttp</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills Brief -->
+    <section class="section skills-brief">
+      <div class="container">
+        <div class="skills-brief__grid">
+          <div class="skills-brief__item reveal stagger-1">
+            <div class="skills-brief__icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="skills-brief__label">Machine Learning</span>
+            <span class="skills-brief__desc">Predictive models & NLP</span>
+          </div>
+          <div class="skills-brief__item reveal stagger-2">
+            <div class="skills-brief__icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </div>
+            <span class="skills-brief__label">Computer Vision</span>
+            <span class="skills-brief__desc">Real-time detection & tracking</span>
+          </div>
+          <div class="skills-brief__item reveal stagger-3">
+            <div class="skills-brief__icon">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <span class="skills-brief__label">Full Stack</span>
+            <span class="skills-brief__desc">Python, JS, APIs & UIs</span>
+          </div>
+          <div class="skills-brief__item reveal stagger-4">
+            <div class="skills-brief__icon">
+              <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span class="skills-brief__label">Real-Time Systems</span>
+            <span class="skills-brief__desc">WebRTC, streaming & low-latency</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <p class="footer__copy">&copy; 2025 Akshay Prashar. Built with precision.</p>
+        <div class="footer__links">
+          <a href="https://github.com" class="footer__link" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://linkedin.com" class="footer__link" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="mailto:akshay@example.com" class="footer__link">Email</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/nav.js"></script>
+  <script src="js/scroll-animations.js"></script>
+  <script type="module" src="js/spline-hero.js"></script>
 </body>
-
 </html>
