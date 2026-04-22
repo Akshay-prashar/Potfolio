@@ -1,7 +1,0 @@
-PyQt5==5.15.10
-opencv-python==4.9.0.80
-numpy==1.26.4
-aiohttp==3.9.3
-aiortc>=1.8.0
-qrcode>=7.4.2
-Pillow>=10.2.0
