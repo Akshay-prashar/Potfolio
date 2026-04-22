@@ -1,0 +1,338 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: black;
+}
+
+.main {
+    background-image: url(Netflix_Assets/bg.jpg);
+    height: 70vh;
+    background-size: max(1600px, 100vw);
+    background-repeat: no-repeat;
+    background-position: center center;
+    position: relative;
+}
+
+.box {
+    height: 70vh;
+    width: 100%;
+    background-color: black;
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+}
+
+nav {
+    display: flex;
+    width: 80vw;
+    height: 80px;
+    margin: auto;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+nav img {
+    height: 45px;
+    position: relative;
+}
+
+.btn-trans {
+    font-size: 17px;
+    font-weight: 400;
+    padding: 5px 5px 5px 5px;
+    border-radius: 3px;
+    color: white;
+    border: rgba(23, 23, 23, 0.7);
+    background-color: rgba(23, 23, 23, 0.7);
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.btn-trans img {
+    height: 15px;
+    padding: 0px 4px 0px 4px;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.btn-red {
+    font-size: 17px;
+    font-weight: 400;
+    padding: 5px 5px 5px 5px;
+    border-radius: 3px;
+    color: white;
+    background-color: red;
+    border: red;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.hero {
+    height: calc(100% - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+    gap: 25px;
+    padding: 0 20px;
+    text-align: center;
+
+}
+
+.hero> :nth-child(1) {
+    color: white;
+    font-size: 48px;
+    font-weight: 900;
+}
+
+.hero> :nth-child(2) {
+    color: white;
+    font-size: 23px;
+    font-weight: 400;
+}
+
+.hero> :nth-child(3) {
+    color: white;
+    font-size: 20px;
+    font-weight: 400;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-btn {
+    font-size: 20px;
+    font-weight: 500;
+    padding: 9px 12px;
+    border-radius: 3px;
+    color: white;
+    background-color: red;
+    border: red;
+    cursor: pointer;
+}
+
+.email {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 15px 115px 8px 12px;
+    border-radius: 3px;
+    color: white;
+    border: 0.5px solid rgba(225, 223, 223, 0.3);
+    background-color: rgba(23, 23, 23, 0.7);
+}
+
+.seprator {
+    height: 1vh;
+    background-color: rgb(46, 44, 44);
+    position: relative;
+    z-index: 2;
+}
+
+.first {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 70vw;
+    margin: auto;
+    color: white;
+    gap: 10px;
+}
+
+
+.first>div :nth-child(1) {
+    font-size: 43px;
+    font-weight: 900;
+}
+
+.first>div :nth-child(2) {
+    font-size: 23px;
+    font-weight: 400;
+}
+
+.imgsec {
+    position: relative;
+}
+
+.imgsec img {
+    width: 520px;
+    position: relative;
+    z-index: 1;
+}
+
+.imgsec video {
+    position: absolute;
+    width: 390px;
+    top: 81px;
+    right: 61px;
+}
+
+.third .imgsec video {
+    position: absolute;
+    width: 320px;
+    top: 33px;
+    right: 103px;
+}
+
+.faq {
+    color: white;
+    padding: 32px;
+}
+
+.faq h2 {
+    text-align: center;
+    font-size: 43px;
+    font-weight: 700;
+    margin: 44px;
+}
+
+.faqbox {
+    display: flex;
+    background-color: #2d2d2d;
+    max-width: 65vw;
+    padding: 15px;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 28px;
+    margin: 20px auto;
+    cursor: pointer;
+    transition: all 0.5s linear;
+}
+
+.faqbox:hover {
+    background-color: #414141;
+}
+
+.faq>span {
+    width: 100%;
+    display: inline-block;
+    font-size: 20px;
+    font-weight: 400;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+footer {
+    padding: 80px;
+    color: rgba(255, 255, 255, 0.7);
+    width: 80vw;
+    margin: auto;
+}
+
+footer span a {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+footer ul {
+    padding: 10px;
+    max-width: 80vw;
+    margin: 15px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    row-gap: 20px;
+}
+
+footer ul li {
+    list-style: none;
+
+}
+
+footer ul li a {
+    text-decoration-color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#last-btn {
+    margin-top: 10px;
+    border: 0.5px solid rgba(225, 223, 223, 0.3);
+}
+
+#brand-name {
+    padding-top: 15px;
+}
+
+
+@media (max-width:1200px) {
+
+    nav img {
+        height: 27px;
+    }
+
+    nav {
+        max-width: 99vw;
+    }
+
+    .btn-red {
+        font-size: 12px;
+    }
+
+    .btn-trans {
+        font-size: 12px;
+    }
+
+    .btn-trans img {
+        height: 10px;
+    }
+
+    .hero> :nth-child(1) {
+        font-size: 32px;
+        font-weight: 900;
+    }
+
+    .hero> :nth-child(2) {
+        font-size: 18px;
+        font-weight: 400;
+    }
+
+    .hero> :nth-child(3) {
+        font-size: 18px;
+        font-weight: 400;
+    }
+
+    .hero-buttons {
+        flex-wrap: wrap;
+    }
+
+    .first {
+        flex-wrap: wrap;
+        padding: 45px 26px;
+    }
+
+    .imgsec img {
+        width: 400px;
+    }
+
+    .imgsec video {
+        width: 290px;
+        top: 63px;
+        right: 57px;
+    }
+
+    .third .imgsec video {
+        width: 247px;
+        top: 26px;
+        right: 79px;
+    }
+
+    .faq h2 {
+
+        font-size: 32px;
+    }
+
+    footer ul {
+        grid-template-columns: 1fr 1fr;
+        gap: 35px;
+    }
+}

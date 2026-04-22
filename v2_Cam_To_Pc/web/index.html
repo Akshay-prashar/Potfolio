@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wireless Camera</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">🎥</div>
+            <h1>Wireless Stream</h1>
+        </header>
+        
+        <main>
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline muted></video>
+                <div id="statusOverlay" class="status-overlay">Ready to Connect</div>
+            </div>
+
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary">
+                    <span class="icon">🟢</span> Start Streaming
+                </button>
+                <button id="stopBtn" class="btn btn-danger" disabled>
+                    <span class="icon">🛑</span> Stop
+                </button>
+            </div>
+        </main>
+    </div>
+    <script src="/static/client.js"></script>
+</body>
+</html>

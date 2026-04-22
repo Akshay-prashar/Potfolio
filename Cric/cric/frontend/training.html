@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Engine | CricAI</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="ambient-mesh"></div>
+
+  <header class="navbar">
+    <a href="/" class="brand"><div class="brand-dot"></div>CricAI</a>
+    <nav class="nav-links">
+      <a href="/">Live</a>
+      <a href="./training.html" class="active">Training</a>
+    </nav>
+  </header>
+
+  <main class="container fade-up">
+    <!-- Header -->
+    <div class="section">
+      <h2 class="display" style="font-size:2.5rem;">Simulation Engine</h2>
+      <p class="muted">Test session prediction accuracy on historical IPL matches to audit the active deployed model.</p>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="glass pad section" style="max-width: 600px;">
+      <p class="panel-header" style="margin-bottom:0.75rem;">Engine Controls</p>
+      
+      <div style="margin-bottom:1.5rem;">
+        <label for="matchSelect" class="label" style="display:block;margin-bottom:0.5rem;">Select Historical Match Target</label>
+        <select id="matchSelect" class="select-field">
+          <option value="all">Loading dataset matches...</option>
+        </select>
+      </div>
+      
+      <div style="display:flex; gap:1rem; align-items:center;">
+        <button id="simBtn" class="btn btn-primary">▶ Run Simulation</button>
+        <button id="stopBtn" class="btn btn-ghost btn-disabled">⏹ Stop</button>
+        <span id="simStatus" class="muted" style="font-size:0.85rem; margin-left:auto;"></span>
+      </div>
+    </div>
+
+    <!-- Accuracy Stats -->
+    <div class="stat-grid stat-grid-3 section">
+      <div class="stat-box">
+        <p class="label">Total Predictions Evaluated</p>
+        <p class="val" id="totP">0</p>
+      </div>
+      <div class="stat-box">
+        <p class="label">Clean Predictions (< 10 Err)</p>
+        <p class="val green-val" id="totC">0</p>
+      </div>
+      <div class="stat-box">
+        <p class="label">Engine Accuracy Score</p>
+        <p class="val gold-val" id="totA">0.0%</p>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="section">
+      <p class="label" style="margin-bottom:1rem;">Backend Evaluation Ledger</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Inning</th>
+              <th>Session Route</th>
+              <th>Predicted Target</th>
+              <th>Actual Score</td>
+              <th>Absolute Error</th>
+              <th>Match Result Grade</th>
+            </tr>
+          </thead>
+          <tbody id="simTableBody">
+            <tr><td colspan="6" style="text-align:center;" class="muted">Engine standby. No active simulation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="./js/training.js"></script>
+</body>
+</html>
