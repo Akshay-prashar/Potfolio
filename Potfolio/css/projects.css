@@ -233,14 +233,54 @@
 @media (max-width: 768px) {
   .projects-header {
     padding-top: calc(var(--nav-height) + var(--space-10));
+    padding-bottom: var(--space-8);
     text-align: left;
+  }
+
+  .projects-header__title {
+    font-size: var(--text-4xl);
   }
 
   .projects-header__subtitle {
     margin: 0;
+    font-size: var(--text-base);
   }
 
   .filters {
     justify-content: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-8);
+  }
+
+  .filter-chip {
+    font-size: var(--text-xs);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .glass-card__body {
+    padding: var(--space-4);
+  }
+
+  .glass-card__title {
+    font-size: var(--text-xl);
+  }
+
+  .glass-card__desc {
+    font-size: var(--text-xs);
+  }
+
+  .glass-card__arrow {
+    bottom: var(--space-4);
+    right: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .projects-header {
+    padding-top: calc(var(--nav-height) + var(--space-8));
+  }
+
+  .projects-header__title {
+    font-size: var(--text-3xl);
   }
 }
