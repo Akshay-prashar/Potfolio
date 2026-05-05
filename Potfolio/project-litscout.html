@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPL Prediction Model — Akshay Prashar</title>
-  <meta name="description" content="Case study: Ball-by-ball IPL match winner and score prediction using XGBoost, feature engineering, and FastAPI deployment.">
+  <title>AI Literature Scout — Akshay Prashar</title>
+  <meta name="description" content="Case study: An AI-powered research tool that generates summaries and insights from academic PDFs using NLP and FastAPI.">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/nav.css">
@@ -14,9 +14,9 @@
 
   <a href="#main" class="skip-link">Skip to content</a>
   <nav class="nav" role="navigation" aria-label="Main navigation">
-    <a href="index.html" class="nav__logo">akshay<span>.</span></a>
+    <a href="../index.html" class="nav__logo">akshay<span>.</span></a>
     <div class="nav__links" id="nav-links">
-      <a href="index.html" class="nav__link">Home</a>
+      <a href="../index.html" class="nav__link">Home</a>
       <a href="projects.html" class="nav__link">Projects</a>
       <a href="about.html" class="nav__link">About</a>
       <a href="assets/Akshay_Prashar_Resume.pdf" class="nav__link" target="_blank">Resume</a>
@@ -34,29 +34,29 @@
           <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back to Projects
         </a>
-        <span class="detail-hero__category">Machine Learning</span>
-        <h1 class="detail-hero__title">IPL Winner & Score Prediction</h1>
+        <span class="detail-hero__category">AI / NLP</span>
+        <h1 class="detail-hero__title">AI Literature Scout</h1>
         <p class="detail-hero__summary">
-          A contextual prediction engine that forecasts IPL match winners and final innings scores ball-by-ball, using engineered features and XGBoost models served via FastAPI.
+          An intelligent research utility that processes academic PDFs and generates structured summaries, key insights, and topic analysis — solving information overload for students and researchers.
         </p>
         <div class="detail-hero__meta">
           <div class="detail-hero__meta-item">
             <span class="detail-hero__meta-label">Role</span>
-            <span class="detail-hero__meta-value">ML Engineer</span>
+            <span class="detail-hero__meta-value">Full-Stack Developer</span>
           </div>
           <div class="detail-hero__meta-item">
             <span class="detail-hero__meta-label">Type</span>
-            <span class="detail-hero__meta-value">Predictive Analytics</span>
+            <span class="detail-hero__meta-value">AI Research Tool</span>
           </div>
           <div class="detail-hero__meta-item">
             <span class="detail-hero__meta-label">Stack</span>
-            <span class="detail-hero__meta-value">Python, XGBoost, FastAPI</span>
+            <span class="detail-hero__meta-value">Python, FastAPI, NLP</span>
           </div>
         </div>
       </section>
     </div>
 
-    <img src="assets/thumb-ipl.webp" alt="IPL Prediction Model — live prediction dashboard" class="detail-banner" loading="lazy">
+    <img src="assets/thumb-litscout.webp" alt="AI Literature Scout — paper analysis interface" class="detail-banner" loading="lazy">
 
     <div class="container">
       <div class="detail-body">
@@ -65,18 +65,16 @@
             <h3 class="detail-sidebar__heading">Tech Stack</h3>
             <div class="detail-sidebar__list">
               <span class="detail-sidebar__item">Python 3.x</span>
-              <span class="detail-sidebar__item">XGBoost</span>
-              <span class="detail-sidebar__item">Pandas & NumPy</span>
-              <span class="detail-sidebar__item">Scikit-learn</span>
               <span class="detail-sidebar__item">FastAPI</span>
-              <span class="detail-sidebar__item">Joblib</span>
-              <span class="detail-sidebar__item">Google Colab</span>
+              <span class="detail-sidebar__item">Uvicorn</span>
+              <span class="detail-sidebar__item">NLP Libraries</span>
+              <span class="detail-sidebar__item">HTML / CSS / JS</span>
             </div>
           </div>
           <div class="detail-sidebar__section">
             <h3 class="detail-sidebar__heading">Links</h3>
             <div class="detail-sidebar__links">
-              <a href="https://github.com/Akshay-prashar/Potfolio/tree/main/Cric" class="detail-sidebar__link" target="_blank" rel="noopener">
+              <a href="https://github.com/Akshay-prashar/Potfolio/tree/main/ai-lit-scout" class="detail-sidebar__link" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
                 Source Code
               </a>
@@ -88,20 +86,14 @@
           <section class="detail-section">
             <h2 class="detail-section__heading">Problem</h2>
             <p class="detail-section__text">
-              Existing IPL prediction models produce a single pre-match prediction that ignores the evolving match context. During a run chase, win probabilities remain static despite dramatic changes in required run rate, wickets in hand, and batting partnerships.
-            </p>
-            <p class="detail-section__text">
-              The result: a 99% win-probability bias that fails to capture the actual dynamics of live cricket — rendering predictions useless for real-time commentary or betting analysis.
+              Academic researchers and students face a constant flood of published papers. Reading and extracting key insights from each paper manually is time-consuming and unsustainable — especially during literature review phases where dozens of papers need to be processed.
             </p>
           </section>
 
           <section class="detail-section">
             <h2 class="detail-section__heading">Solution</h2>
             <p class="detail-section__text">
-              Built a two-model prediction system: one for match winner probability and one for final innings score estimation. Both models ingest ball-by-ball contextual features — including target score, required run rate, current run rate differential, and partnership data.
-            </p>
-            <p class="detail-section__text">
-              The models are trained on historical IPL data with extensive feature engineering, then served via a FastAPI inference endpoint that accepts live match state and returns calibrated predictions.
+              Built a web application where users upload PDF research papers and receive AI-generated summaries, key findings, methodological analysis, and structured insights. The backend uses NLP pipelines for text extraction, segmentation, and summarization — served through a clean, accessible frontend.
             </p>
           </section>
 
@@ -110,26 +102,26 @@
             <div class="feature-list">
               <div class="feature-list__item">
                 <div>
-                  <p class="feature-list__item-title">Ball-by-Ball Context</p>
-                  <p class="feature-list__item-desc">Features like required run rate, wickets remaining, and batting partnership duration update every delivery.</p>
+                  <p class="feature-list__item-title">PDF Upload & Processing</p>
+                  <p class="feature-list__item-desc">Drag-and-drop or click-to-upload interface with real-time processing status indicators.</p>
                 </div>
               </div>
               <div class="feature-list__item">
                 <div>
-                  <p class="feature-list__item-title">Dual-Model Architecture</p>
-                  <p class="feature-list__item-desc">Separate XGBoost classifiers for winner prediction and score regression, each optimized for their specific task.</p>
+                  <p class="feature-list__item-title">AI-Generated Summaries</p>
+                  <p class="feature-list__item-desc">Concise abstractions of paper content with adjustable detail levels.</p>
                 </div>
               </div>
               <div class="feature-list__item">
                 <div>
-                  <p class="feature-list__item-title">FastAPI Inference</p>
-                  <p class="feature-list__item-desc">Production-ready API endpoint that accepts match state JSON and returns predictions in milliseconds.</p>
+                  <p class="feature-list__item-title">Key Points Extraction</p>
+                  <p class="feature-list__item-desc">Automatically identifies and highlights the most significant findings, methods, and conclusions.</p>
                 </div>
               </div>
               <div class="feature-list__item">
                 <div>
-                  <p class="feature-list__item-title">Feature Engineering Pipeline</p>
-                  <p class="feature-list__item-desc">Automated feature extraction from raw ball-by-ball data, including venue encoding, team strength metrics, and momentum indicators.</p>
+                  <p class="feature-list__item-title">Clean Web Interface</p>
+                  <p class="feature-list__item-desc">Responsive frontend built with vanilla HTML, CSS, and JavaScript — no framework overhead.</p>
                 </div>
               </div>
             </div>
@@ -138,17 +130,17 @@
           <section class="detail-section">
             <h2 class="detail-section__heading">Challenges</h2>
             <p class="detail-section__text">
-              <strong>99% bias problem:</strong> Initial models showed extreme win probability bias during second innings. Solved by introducing target_score and required_run_rate as first-class features.
+              <strong>PDF parsing variation:</strong> Academic PDFs vary wildly in structure — multi-column layouts, embedded tables, mathematical notation. Required building a robust text extraction pipeline that handles edge cases gracefully.
             </p>
             <p class="detail-section__text">
-              <strong>Data imbalance:</strong> Winning team data is inherently imbalanced across venues and seasons. Applied SMOTE and stratified cross-validation to maintain prediction stability.
+              <strong>Summary quality:</strong> Balancing conciseness with completeness required iterating on prompt engineering and NLP pipeline configuration to avoid losing critical context.
             </p>
           </section>
 
           <div class="outcome-block">
             <h2 class="outcome-block__title">Outcome</h2>
             <p class="outcome-block__text">
-              A deployable, real-time prediction engine that reacts to match dynamics rather than static pre-match data. The system provides probability shifts that actually reflect game momentum — useful for commentary tools, fan engagement platforms, and analytical dashboards.
+              A practical, deployable tool that reduces literature review time significantly. Students can process a batch of papers and get structured insights in minutes rather than hours — making research more accessible and efficient.
             </p>
           </div>
         </div>
@@ -158,7 +150,7 @@
     <section class="next-project">
       <div class="container">
         <p class="next-project__label">Next Project</p>
-        <a href="project-litscout.html" class="next-project__link">AI Literature Scout →</a>
+        <a href="project-camera.html" class="next-project__link">Wireless Camera Stream →</a>
       </div>
     </section>
   </main>
